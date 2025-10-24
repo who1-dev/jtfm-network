@@ -12,9 +12,9 @@ provider "aws" {
   region = "us-east-1"
   default_tags {
     tags = {
-      Project = "IOT"
-      AppPurpose   = "Network"
-      Owner = "JOHN-RND"
+      Project    = "IOT"
+      AppPurpose = "Network"
+      Owner      = "JOHN-RND"
     }
   }
 }

@@ -34,18 +34,20 @@ variable "azs" {
 
 variable "public_subnets" {
   type        = list(string)
-  description = "List of public subnet CIDR blocks"
+  description = "List of public subnet CIDRs"
+  default     = []
   validation {
-    condition     = length(var.azs) == length(var.public_subnets)
-    error_message = "The number of public subnets must match the number of availability zones."
+    condition     = !(length(var.public_subnets) > 0 && length(var.public_subnets) != length(var.azs))
+    error_message = "ERROR: The number of public subnets must match the number of availability zones."
   }
 }
 
 variable "private_subnets" {
   type        = list(string)
   description = "List of private subnet CIDR blocks"
+  default     = []
   validation {
-    condition     = length(var.azs) == length(var.private_subnets)
-    error_message = "The number of private subnets must match the number of availability zones."
+    condition     = !(length(var.private_subnets) > 0 && length(var.private_subnets) != length(var.azs))
+    error_message = "ERROR: The number of private subnets must match the number of availability zones."
   }
 }

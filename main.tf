@@ -10,6 +10,8 @@ resource "aws_vpc" "vpc" {
 
 # Create an Internet Gateway
 resource "aws_internet_gateway" "igw" {
+  count = local.create_public_resources ? 1 : 0
+
   vpc_id = aws_vpc.vpc.id
   tags = merge(local.default_tags, {
     Name = format("%s-%s", local.namespace, local.IGW)
@@ -44,6 +46,8 @@ resource "aws_subnet" "private" {
 
 # Create a Public Route Table
 resource "aws_route_table" "public" {
+  count = local.create_public_resources ? 1 : 0
+
   vpc_id = aws_vpc.vpc.id
   tags = merge(local.default_tags, {
     Name = format("%s-%s", local.namespace, local.PUB_RT)
@@ -52,6 +56,8 @@ resource "aws_route_table" "public" {
 
 # Create a Private Route Table
 resource "aws_route_table" "private" {
+  count = local.create_private_resources ? 1 : 0
+
   vpc_id = aws_vpc.vpc.id
   tags = merge(local.default_tags, {
     Name = format("%s-%s", local.namespace, local.PRV_RT)
@@ -62,14 +68,14 @@ resource "aws_route_table" "private" {
 resource "aws_route_table_association" "public" {
   for_each       = aws_subnet.public
   subnet_id      = each.value.id
-  route_table_id = aws_route_table.public.id
+  route_table_id = aws_route_table.public[0].id
 }
 
 # Associate Private Subnets with Private Route Table
 resource "aws_route_table_association" "private" {
   for_each       = aws_subnet.private
   subnet_id      = each.value.id
-  route_table_id = aws_route_table.private.id
+  route_table_id = aws_route_table.private[0].id
 }
 
 
