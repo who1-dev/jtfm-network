@@ -4,7 +4,7 @@ locals {
   INTERNET_CIDR = "0.0.0.0/0"
   default_tags  = { "Environment" : upper(var.env) }
 
-  # Naming conventions:
+  # Constant Naming conventions:
   VPC      = "VPC"
   IGW      = "IGW"
   NATGW    = "NATGW"
@@ -32,21 +32,34 @@ locals {
     database = local.create_database_resources ? { for idx, az in var.azs : local.az_keys[az] => { az = az, cidr = var.database_subnets[idx] } } : {}
   }
 
+  natgw_map = !var.enable_nat_gateway ? {} : (
+    # If NAT is enabled, check this:
+    (length(var.set_nat_az_location) == 0) ?                                             # Is the set_nat_az_location list empty?
+    { 0 : { location : local.az_keys[var.azs[0]] } } :                                   # YES: create a map using the first AZ
+    { for idx, az in var.set_nat_az_location : idx => { location : local.az_keys[az] } } # NO: create a map from the list
+  )
 
-  # Conditions:
-  # Flags to determine if resources should be created based on input variables
+
+  # Counters:
+  len_pub_sub =  length(var.public_subnets) 
+  len_prv_sub = length(var.private_subnets)
+  len_db_sub  = length(var.database_subnets)
+
+
+
+  # Conditional Logic:
+  # Flags 
   # Determine which resources to create based on input variables
-  create_public_resources   = length(var.public_subnets) > 0 ? true : false
-  create_private_resources  = length(var.private_subnets) > 0 ? true : false
-  create_database_resources = length(var.database_subnets) > 0 ? true : false
+  create_public_resources   = local.len_pub_sub > 0 ? true : false
+  create_private_resources  = local.len_prv_sub > 0 ? true : false
+  create_database_resources = local.len_db_sub > 0 ? true : false
+  is_nat_multiaz_enabled    = var.enable_nat_gateway && length(var.set_nat_az_location) > 1 ? true : false
 
 
-  # Determine the AZ key to be used for NAT Gateway
-  set_nat_az_key = (
-    var.set_nat_az_location != "" && contains(var.azs, var.set_nat_az_location) # if set and valid
-  ) ? var.set_nat_az_location : var.azs[0]                                      # Default to first AZ if not set or invalid
+  # Counters for Route Tables
+  len_prv_rt = !local.create_private_resources ? 0 : local.is_nat_multiaz_enabled ? local.len_prv_sub : 1
+  len_db_rt  = !local.create_database_resources ? 0 : local.is_nat_multiaz_enabled ? local.len_db_sub : 1
 
-  # Create NAT Gateway map only if enabled
-  nat_gw_map = var.enable_nat_gateway ? [local.az_keys[local.set_nat_az_key]] : []
+
 
 }

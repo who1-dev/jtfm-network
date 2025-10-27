@@ -56,11 +56,17 @@ variable "enable_nat_gateway" {
 }
 
 variable "set_nat_az_location" {
-  type        = string
-  description = "Set AZ where the NAT Gateway should be placed"
-  default     = ""
+  type        = list(string)
+  description = "A list of Availability Zones to deploy NAT Gateways in. Must be a subset of var.azs."
+  default     = []
+  validation {
+    # Check if all elements in set_nat_az_location are present in var.azs
+    condition = alltrue([
+      for az in var.set_nat_az_location : contains(var.azs, az)
+    ])
+    error_message = "All values in set_nat_az_location must be valid Availability Zones defined in var.azs."
+  }
 }
-
 variable "enable_nat_access_to_private_subnets" {
   type        = bool
   description = "This flag will create route for Private Subnets NAT Access"

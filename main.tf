@@ -23,10 +23,9 @@ resource "aws_internet_gateway" "igw" {
 
 # Create NAT Gateway (if enabled)
 resource "aws_eip" "nat" {
-  for_each = toset(local.nat_gw_map) # Allocate an Elastic IP for each NAT Gateway
-
+  for_each = local.natgw_map
   tags = merge(local.default_tags, {
-    Name = format("%s-%s-%s", local.namespace, local.EIP, each.key)
+    Name = format("%s-%s-%s", local.namespace, local.EIP, (each.key + 1))
   })
 
   depends_on = [aws_internet_gateway.igw]
@@ -34,12 +33,12 @@ resource "aws_eip" "nat" {
 
 
 resource "aws_nat_gateway" "nat" {
-  for_each      = toset(local.nat_gw_map)
+  for_each      = local.natgw_map
   allocation_id = aws_eip.nat[each.key].id
-  subnet_id     = aws_subnet.public[each.key].id
+  subnet_id     = aws_subnet.public[each.value.location].id
 
   tags = merge(local.default_tags, {
-    Name = format("%s-%s-%s", local.namespace, local.NATGW, each.key)
+    Name = format("%s-%s-%s", local.namespace, local.NATGW, (each.key + 1))
   })
 
   depends_on = [aws_internet_gateway.igw]
@@ -107,11 +106,11 @@ resource "aws_route_table" "public" {
 
 # Create a Private Route Table
 resource "aws_route_table" "private" {
-  count = local.create_private_resources ? 1 : 0
+  count = local.len_prv_rt
 
   vpc_id = aws_vpc.vpc.id
   tags = merge(local.default_tags, {
-    Name = format("%s-%s", local.namespace, local.PRV_RT)
+    Name = local.len_prv_rt == 1 ? format("%s-%s", local.namespace, local.PRV_RT) : format("%s-%s-%d", local.namespace, local.PRV_RT, count.index + 1)
   })
 
   depends_on = [aws_vpc.vpc]
@@ -119,11 +118,11 @@ resource "aws_route_table" "private" {
 
 # Create a Database Route Table
 resource "aws_route_table" "database" {
-  count = local.create_database_resources ? 1 : 0
+  count = local.len_db_rt
 
   vpc_id = aws_vpc.vpc.id
   tags = merge(local.default_tags, {
-    Name = format("%s-%s", local.namespace, local.DB_RT)
+    Name = local.len_db_rt == 1 ? format("%s-%s", local.namespace, local.DB_RT) : format("%s-%s-%d", local.namespace, local.DB_RT, count.index + 1)
   })
 
   depends_on = [aws_vpc.vpc]
@@ -141,9 +140,9 @@ resource "aws_route_table_association" "public" {
 
 # Associate Private Subnets with Private Route Table
 resource "aws_route_table_association" "private" {
-  for_each       = aws_subnet.private
-  subnet_id      = each.value.id
-  route_table_id = aws_route_table.private[0].id
+  count  =  local.create_private_resources ? local.len_prv_sub : 0
+  subnet_id      = element(aws_subnet.private[*].id, count.index)
+  route_table_id = element(aws_route_table.private[*].id, count.index)
 
   depends_on = [aws_route_table.private]
 }
@@ -151,9 +150,9 @@ resource "aws_route_table_association" "private" {
 
 # Associate Database Subnets with Private Route Table
 resource "aws_route_table_association" "database" {
-  for_each       = aws_subnet.database
-  subnet_id      = each.value.id
-  route_table_id = aws_route_table.database[0].id
+  count  = local.create_public_resources ? local.len_db_sub : 0
+  subnet_id      = element(aws_subnet.database[*].id, count.index)
+  route_table_id = element((aws_route_table.database[*].id), count.index)
 
   depends_on = [aws_route_table.database]
 }
