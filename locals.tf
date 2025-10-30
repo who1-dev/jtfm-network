@@ -1,8 +1,9 @@
 locals {
 
   # Constants:
-  INTERNET_CIDR = "0.0.0.0/0"
-  default_tags  = { "Environment" : upper(var.env) }
+  INTERNET_CIDR  = "0.0.0.0/0"
+  REGEX_AZ_SHORT = "([0-9]+[a-z])"
+  default_tags   = { "Environment" : upper(var.env) }
 
   # Constant Naming conventions:
   VPC      = "VPC"
@@ -20,46 +21,63 @@ locals {
   # Local name
   namespace = upper(format("%s-%s-%s", var.namespace, var.env, local.VPC))
 
-  # Mappers:
-  # Generic subnet mapper: takes a list of CIDRs and AZs, returns a map keyed by AZ suffix
-  # Regex will render '1a' from 'us-east-1a' and convert to uppercase '1A' e.g., 'us-east-1a' -> '1A'
-  az_keys = { for az in var.azs : az => upper(regex("([0-9]+[a-z])", az)[0]) }
 
-  subnet_map = {
-    # Subnet maps for public, private, and database subnets each keyed by AZ suffix e.g., 1A, 1B
-    public   = local.create_public_resources ? { for idx, az in var.azs : local.az_keys[az] => { az = az, cidr = var.public_subnets[idx] } } : {}
-    private  = local.create_private_resources ? { for idx, az in var.azs : local.az_keys[az] => { az = az, cidr = var.private_subnets[idx] } } : {}
-    database = local.create_database_resources ? { for idx, az in var.azs : local.az_keys[az] => { az = az, cidr = var.database_subnets[idx] } } : {}
-  }
-
-  natgw_map = !var.enable_nat_gateway ? {} : (
-    # If NAT is enabled, check this:
-    (length(var.set_nat_az_location) == 0) ?                                             # Is the set_nat_az_location list empty?
-    { 0 : { location : local.az_keys[var.azs[0]] } } :                                   # YES: create a map using the first AZ
-    { for idx, az in var.set_nat_az_location : idx => { location : local.az_keys[az] } } # NO: create a map from the list
-  )
+  # Sorted AZs
+  sorted_azs = sort(var.azs)
 
 
-  # Counters:
-  len_pub_sub =  length(var.public_subnets) 
-  len_prv_sub = length(var.private_subnets)
-  len_db_sub  = length(var.database_subnets)
+  # Lengths:
+  len_azs              = length(var.azs)
+  len_pub_sub          = length(var.public_subnets)
+  len_prv_sub          = length(var.private_subnets)
+  len_db_sub           = length(var.database_subnets)
+  len_nat_az_locations = var.enable_nat_gateway ? length(var.set_nat_deployment_az_location) : 0
 
 
-
-  # Conditional Logic:
-  # Flags 
-  # Determine which resources to create based on input variables
+  # Booleans:
   create_public_resources   = local.len_pub_sub > 0 ? true : false
   create_private_resources  = local.len_prv_sub > 0 ? true : false
   create_database_resources = local.len_db_sub > 0 ? true : false
-  is_nat_multiaz_enabled    = var.enable_nat_gateway && length(var.set_nat_az_location) > 1 ? true : false
 
 
-  # Counters for Route Tables
-  len_prv_rt = !local.create_private_resources ? 0 : local.is_nat_multiaz_enabled ? local.len_prv_sub : 1
-  len_db_rt  = !local.create_database_resources ? 0 : local.is_nat_multiaz_enabled ? local.len_db_sub : 1
+  # Lists
+  list_az_keys     = [for az in local.sorted_azs : upper(regex(local.REGEX_AZ_SHORT, az)[0])]
+  list_nat_az_keys = [for az in sort(var.set_nat_deployment_az_location) : upper(regex(local.REGEX_AZ_SHORT, az)[0])]
+
+  # Sliced Lists: wil be used as keys for route tables
+  list_private_az_keys  = slice(local.list_az_keys, 0, (local.len_prv_sub < local.len_azs ? local.len_prv_sub : local.len_azs))
+  list_database_az_keys = slice(local.list_az_keys, 0, (local.len_db_sub < local.len_azs ? local.len_db_sub : local.len_azs))
+
+  # Subnet per AZ calculations:
+  len_pub_sub_per_az = local.create_public_resources ? local.len_pub_sub / local.len_azs : 0
+  len_prv_sub_per_az = local.create_private_resources ? local.len_prv_sub / local.len_azs : 0
+  len_db_sub_per_az  = local.create_database_resources ? local.len_db_sub / local.len_azs : 0
 
 
+  # Generate subnet keys: e.g., 1A1, 1A2, 1B1, 1B2 for 2 AZs and 4 subnets
+  keys_pub_sub = {
+    for idx, cidr in var.public_subnets :
+    "${local.list_az_keys[idx % local.len_azs]}${floor(idx / local.len_azs) + 1}" => {
+      az       = local.sorted_azs[idx % local.len_azs]
+      short_az = local.list_az_keys[idx % local.len_azs]
+      cidr     = cidr
+    }
+  }
+  keys_prv_sub = {
+    for idx, cidr in var.private_subnets :
+    "${local.list_az_keys[idx % local.len_azs]}${floor(idx / local.len_azs) + 1}" => {
+      az       = local.sorted_azs[idx % local.len_azs]
+      short_az = local.list_az_keys[idx % local.len_azs]
+      cidr     = cidr
+    }
+  }
+  keys_db_sub = {
+    for idx, cidr in var.database_subnets :
+    "${local.list_az_keys[idx % local.len_azs]}${floor(idx / local.len_azs) + 1}" => {
+      az       = local.sorted_azs[idx % local.len_azs]
+      short_az = local.list_az_keys[idx % local.len_azs]
+      cidr     = cidr
+    }
+  }
 
 }

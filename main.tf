@@ -21,32 +21,32 @@ resource "aws_internet_gateway" "igw" {
   depends_on = [aws_vpc.vpc]
 }
 
-# Create NAT Gateway (if enabled)
-resource "aws_eip" "nat" {
-  for_each = local.natgw_map
-  tags = merge(local.default_tags, {
-    Name = format("%s-%s-%s", local.namespace, local.EIP, (each.key + 1))
-  })
+# # Create NAT Gateway (if enabled)
+# resource "aws_eip" "nat" {
+#   for_each = local.natgw_map
+#   tags = merge(local.default_tags, {
+#     Name = format("%s-%s-%s", local.namespace, local.EIP, (each.key + 1))
+#   })
 
-  depends_on = [aws_internet_gateway.igw]
-}
+#   depends_on = [aws_internet_gateway.igw]
+# }
 
 
-resource "aws_nat_gateway" "nat" {
-  for_each      = local.natgw_map
-  allocation_id = aws_eip.nat[each.key].id
-  subnet_id     = aws_subnet.public[each.value.location].id
+# resource "aws_nat_gateway" "nat" {
+#   for_each      = local.natgw_map
+#   allocation_id = aws_eip.nat[each.key].id
+#   subnet_id     = aws_subnet.public[each.value.location].id
 
-  tags = merge(local.default_tags, {
-    Name = format("%s-%s-%s", local.namespace, local.NATGW, (each.key + 1))
-  })
+#   tags = merge(local.default_tags, {
+#     Name = format("%s-%s-%s", local.namespace, local.NATGW, (each.key + 1))
+#   })
 
-  depends_on = [aws_internet_gateway.igw]
-}
+#   depends_on = [aws_internet_gateway.igw]
+# }
 
 # Create Public Subnets
 resource "aws_subnet" "public" {
-  for_each = local.subnet_map.public
+  for_each = local.keys_pub_sub
 
   vpc_id            = aws_vpc.vpc.id
   region            = var.region
@@ -62,7 +62,7 @@ resource "aws_subnet" "public" {
 
 # Create Private Subnets
 resource "aws_subnet" "private" {
-  for_each = local.subnet_map.private
+  for_each = local.keys_prv_sub
 
   vpc_id            = aws_vpc.vpc.id
   region            = var.region
@@ -78,7 +78,7 @@ resource "aws_subnet" "private" {
 
 # Create Database Subnets
 resource "aws_subnet" "database" {
-  for_each = local.subnet_map.database
+  for_each = local.keys_db_sub
 
   vpc_id            = aws_vpc.vpc.id
   region            = var.region
@@ -92,69 +92,66 @@ resource "aws_subnet" "database" {
   depends_on = [aws_vpc.vpc]
 }
 
-# Create a Public Route Table
+# # Create a Public Route Table
 resource "aws_route_table" "public" {
-  count = local.create_public_resources ? 1 : 0
-
   vpc_id = aws_vpc.vpc.id
   tags = merge(local.default_tags, {
     Name = format("%s-%s", local.namespace, local.PUB_RT)
   })
 
-  depends_on = [aws_internet_gateway.igw]
+  depends_on = [aws_subnet.public]
 }
 
 # Create a Private Route Table
 resource "aws_route_table" "private" {
-  count = local.len_prv_rt
+  for_each = toset(local.list_private_az_keys)
 
   vpc_id = aws_vpc.vpc.id
   tags = merge(local.default_tags, {
-    Name = local.len_prv_rt == 1 ? format("%s-%s", local.namespace, local.PRV_RT) : format("%s-%s-%d", local.namespace, local.PRV_RT, count.index + 1)
+    Name = format("%s-%s-%s", local.namespace, local.PRV_RT, each.key)
   })
 
-  depends_on = [aws_vpc.vpc]
+  depends_on = [aws_subnet.private]
 }
 
 # Create a Database Route Table
 resource "aws_route_table" "database" {
-  count = local.len_db_rt
+  for_each = toset(local.list_database_az_keys)
 
   vpc_id = aws_vpc.vpc.id
   tags = merge(local.default_tags, {
-    Name = local.len_db_rt == 1 ? format("%s-%s", local.namespace, local.DB_RT) : format("%s-%s-%d", local.namespace, local.DB_RT, count.index + 1)
+    Name = format("%s-%s-%s", local.namespace, local.DB_RT, each.key)
   })
 
-  depends_on = [aws_vpc.vpc]
+  depends_on = [aws_subnet.database]
 }
 
 
 # Associate Public Subnets with Public Route Table
 resource "aws_route_table_association" "public" {
-  for_each       = aws_subnet.public
-  subnet_id      = each.value.id
-  route_table_id = aws_route_table.public[0].id
+  for_each       = local.keys_pub_sub
+  subnet_id      = aws_subnet.public[each.key].id
+  route_table_id = aws_route_table.public.id
 
   depends_on = [aws_route_table.public]
 }
 
-# Associate Private Subnets with Private Route Table
+# # Associate Private Subnets with Private Route Table
 resource "aws_route_table_association" "private" {
-  count  =  local.create_private_resources ? local.len_prv_sub : 0
-  subnet_id      = element(aws_subnet.private[*].id, count.index)
-  route_table_id = element(aws_route_table.private[*].id, count.index)
+  for_each = local.keys_prv_sub
+
+  subnet_id      = aws_subnet.private[each.key].id
+  route_table_id = aws_route_table.private[each.value.short_az].id
 
   depends_on = [aws_route_table.private]
 }
 
-
 # Associate Database Subnets with Private Route Table
 resource "aws_route_table_association" "database" {
-  count  = local.create_public_resources ? local.len_db_sub : 0
-  subnet_id      = element(aws_subnet.database[*].id, count.index)
-  route_table_id = element((aws_route_table.database[*].id), count.index)
+  for_each = local.keys_db_sub
+
+  subnet_id      = aws_subnet.database[each.key].id
+  route_table_id = aws_route_table.database[each.value.short_az].id
 
   depends_on = [aws_route_table.database]
 }
-
-
