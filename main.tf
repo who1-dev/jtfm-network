@@ -11,8 +11,6 @@ resource "aws_vpc" "vpc" {
 
 # Create an Internet Gateway
 resource "aws_internet_gateway" "igw" {
-  count = local.create_public_resources ? 1 : 0
-
   vpc_id = aws_vpc.vpc.id
   tags = merge(local.default_tags, {
     Name = format("%s-%s", local.namespace, local.IGW)
@@ -21,28 +19,28 @@ resource "aws_internet_gateway" "igw" {
   depends_on = [aws_vpc.vpc]
 }
 
-# # Create NAT Gateway (if enabled)
-# resource "aws_eip" "nat" {
-#   for_each = local.natgw_map
-#   tags = merge(local.default_tags, {
-#     Name = format("%s-%s-%s", local.namespace, local.EIP, (each.key + 1))
-#   })
+# Create Elastic IPs for NAT Gateways (if enabled)
+resource "aws_eip" "nat" {
+  for_each = toset(local.list_nat_az_keys)
+  tags = merge(local.default_tags, {
+    Name = format("%s-%s-%s", local.namespace, local.EIP, each.key)
+  })
 
-#   depends_on = [aws_internet_gateway.igw]
-# }
+  depends_on = [aws_internet_gateway.igw]
+}
 
+# Create NAT Gateway (if enabled)
+resource "aws_nat_gateway" "nat" {
+  for_each      = toset(local.list_nat_az_keys)
+  allocation_id = aws_eip.nat[each.key].id
+  subnet_id     = aws_subnet.public[format("%s1", each.key)].id         # Assuming NAT is created in the first public subnet of the AZ
 
-# resource "aws_nat_gateway" "nat" {
-#   for_each      = local.natgw_map
-#   allocation_id = aws_eip.nat[each.key].id
-#   subnet_id     = aws_subnet.public[each.value.location].id
+  tags = merge(local.default_tags, {
+    Name = format("%s-%s-%s", local.namespace, local.NATGW, each.key)
+  })
 
-#   tags = merge(local.default_tags, {
-#     Name = format("%s-%s-%s", local.namespace, local.NATGW, (each.key + 1))
-#   })
-
-#   depends_on = [aws_internet_gateway.igw]
-# }
+  depends_on = [aws_internet_gateway.igw]
+}
 
 # Create Public Subnets
 resource "aws_subnet" "public" {
@@ -155,3 +153,4 @@ resource "aws_route_table_association" "database" {
 
   depends_on = [aws_route_table.database]
 }
+

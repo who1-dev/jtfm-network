@@ -86,27 +86,27 @@ variable "enable_nat_access_to_all_database_subnets" {
   default     = false
 }
 
-variable "set_nat_private_subnet_az_connection" {
+variable "set_private_subnet_nat_az_connection" {
   type        = list(string)
   description = "A list of Availability Zones to connect Private Subnets to NAT Gateways. Must be a subset of var.azs."
   default     = []
   validation {
     # Check if all elements in set_nat_private_subnet_az_connection are present in var.azs
     condition = alltrue([
-      for az in var.set_nat_private_subnet_az_connection : contains(var.azs, az)
+      for az in var.set_private_subnet_nat_az_connection : contains(var.azs, az)
     ])
     error_message = "All values in set_nat_private_subnet_az_connection must be valid Availability Zones defined in var.azs."
   }
 }
 
-variable "set_nat_database_subnet_az_connection" {
+variable "set_database_subnet_nat_az_connection" {
   type        = list(string)
   description = "A list of Availability Zones to connect Database Subnets to NAT Gateways. Must be a subset of var.azs."
   default     = []
   validation {
     # Check if all elements in set_nat_database_subnet_az_connection are present in var.azs
     condition = alltrue([
-      for az in var.set_nat_database_subnet_az_connection : contains(var.azs, az)
+      for az in var.set_database_subnet_nat_az_connection : contains(var.azs, az)
     ])
     error_message = "All values in set_nat_database_subnet_az_connection must be valid Availability Zones defined in var.azs."
   }
