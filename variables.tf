@@ -143,4 +143,37 @@ variable "database_subnets" {
 # END: Subnet Variables
 # ─────────────────────────────
 
+# ─────────────────────────────
+# START: NACL Variables
+# ─────────────────────────────
+variable "public_acls" {
+  type        = list(string)
+  description = "List of Public Subnets to have an NACL"
+  default     = []
+}
+
+variable "public_common_acl_rules" {
+  type    = list(string)
+  default = []
+}
+
+
+variable "public_inbound_acl_rules" {
+  type = map(list(object({
+    rule_number     = number
+    egress          = bool
+    protocol        = string
+    rule_action     = string
+    cidr_block      = optional(string)
+    ipv6_cidr_block = optional(string)
+    from_port       = number
+    to_port         = number
+  })))
+  description = "Map of NACL rules for Public Subnets NACLs with port range"
+  default     = {}
+}
+
+# ─────────────────────────────
+# END: NACL Variables
+# ─────────────────────────────
 

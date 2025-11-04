@@ -1,22 +1,6 @@
 locals {
 
-  # Constants:
-  INTERNET_CIDR  = "0.0.0.0/0"
-  REGEX_AZ_SHORT = "([0-9]+[a-z])"
-  default_tags   = { "Environment" : upper(var.env) }
 
-  # Constant Naming conventions:
-  VPC      = "VPC"
-  IGW      = "IGW"
-  NATGW    = "NATGW"
-  EIP      = "EIP"
-  PRV_SUB  = "PRVSUB"
-  PUB_SUB  = "PUBSUB"
-  DB_SUB   = "DBSUB"
-  PRV_RT   = "PRVRT"
-  PUB_RT   = "PUBRT"
-  DB_RT    = "DBRT"
-  RT_ASSOC = "RTASSOC"
 
   # Local name
   namespace = upper(format("%s-%s-%s", var.namespace, var.env, local.VPC))
@@ -82,8 +66,8 @@ locals {
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   # END: SUBNET Related Locals
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  
-  
+
+
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   # START: ROUTE (TABLE || ASSOCIATION) Related Locals
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -95,7 +79,7 @@ locals {
   list_database_az_keys = slice(local.list_az_keys, 0, (local.len_db_sub < local.len_azs ? local.len_db_sub : local.len_azs))
 
   # NAT Gateway related AZ keys | NOTE: NAT will always be deployed in First Public Subnet of each AZs only
-  list_nat_az_keys = !var.enable_nat_gateway ? [] : (var.deploy_nat_in_all_public_azs ?
+  list_nat_az_keys = !var.enable_nat_gateway ? [] : length(var.set_nat_deployment_az_location) == 0 ? [ local.list_public_az_keys[0] ] : (var.deploy_nat_in_all_public_azs ?
     local.list_public_az_keys : [for az in var.set_nat_deployment_az_location : local.dict_azs[az]
     if contains(local.list_public_az_keys, local.dict_azs[az])]
   )
@@ -104,11 +88,11 @@ locals {
 
   # ROUTE TABLE ASSOCIATIONS RELATED LOCALS
   # Valid NAT connections for Private and Database Subnets
-  valid_private_nat_az_connections = !var.enable_nat_gateway || local.list_nat_az_keys == 0  ? [] : [for az in local.list_private_az_keys : az
+  valid_private_nat_az_connections = !var.enable_nat_gateway || local.list_nat_az_keys == 0 ? [] : [for az in local.list_private_az_keys : az
     if contains(local.list_nat_az_keys, az)
   ]
 
-  valid_database_nat_az_connections = !var.enable_nat_gateway || local.list_nat_az_keys == 0  ? [] : [for az in local.list_database_az_keys : az
+  valid_database_nat_az_connections = !var.enable_nat_gateway || local.list_nat_az_keys == 0 ? [] : [for az in local.list_database_az_keys : az
     if contains(local.list_nat_az_keys, az)
   ]
 
@@ -131,6 +115,35 @@ locals {
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   # START: END TABLE Related Locals
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  # Merge common rules into each ACL entry
+
+  public_inbound_acl_rules = length(var.public_inbound_acl_rules) == 0 ? var.public_inbound_acl_rules : {
+    for key, rules in var.public_inbound_acl_rules : key => concat(
+      rules,
+      [
+        for protocol in var.public_common_acl_rules : local.NACL_COMMON_RULES.inbound[protocol]
+      ]
+    )
+  }
+
+
+  flattened_inbound_acl_rules = flatten([
+    for acl_key, rules in local.public_inbound_acl_rules : [
+      for rule in rules : {
+        acl_key         = acl_key
+        rule_number     = rule.rule_number
+        egress          = rule.egress
+        protocol        = rule.protocol
+        rule_action     = rule.rule_action
+        cidr_block      = lookup(rule, "cidr_block", null)
+        ipv6_cidr_block = lookup(rule, "ipv6_cidr_block", null)
+        from_port       = rule.from_port
+        to_port         = rule.to_port
+      }
+    ]
+  ])
 
 
 

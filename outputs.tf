@@ -1,9 +1,9 @@
 output "mapper" {
   description = "Mapper of created resources"
   value = {
-    # keys_pub_sub          = local.keys_pub_sub
-    # keys_prv_sub          = local.keys_prv_sub
-    # keys_db_sub           = local.keys_db_sub
+    keys_pub_sub                = local.keys_pub_sub
+    flattened_inbound_acl_rules = local.flattened_inbound_acl_rules
+    public_inbound_acl_rules    = local.public_inbound_acl_rules
 
     list_public_az_keys   = local.list_public_az_keys
     list_private_az_keys  = local.list_private_az_keys

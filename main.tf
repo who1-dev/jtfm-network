@@ -33,7 +33,7 @@ resource "aws_eip" "nat" {
 resource "aws_nat_gateway" "nat" {
   for_each      = toset(local.list_nat_az_keys)
   allocation_id = aws_eip.nat[each.key].id
-  subnet_id     = aws_subnet.public[format("%s1", each.key)].id         # Assuming NAT is created in the first public subnet of the AZ
+  subnet_id     = aws_subnet.public[format("%s1", each.key)].id # Assuming NAT is created in the first public subnet of the AZ
 
   tags = merge(local.default_tags, {
     Name = format("%s-%s-%s", local.namespace, local.NATGW, each.key)
@@ -153,4 +153,46 @@ resource "aws_route_table_association" "database" {
 
   depends_on = [aws_route_table.database]
 }
+
+# Create Public Network ACL
+resource "aws_network_acl" "public" {
+  for_each = toset(var.public_acls)
+  vpc_id   = aws_vpc.vpc.id
+
+  tags = merge(local.default_tags, {
+    Name = format("%s-%s", local.namespace, local.PUB_NACL)
+  })
+
+  depends_on = [aws_subnet.public]
+
+}
+
+resource "aws_network_acl_association" "public" {
+  for_each = toset(var.public_acls)
+  network_acl_id = aws_network_acl.public[each.key].id
+  subnet_id      = aws_subnet.public[each.key].id
+
+  depends_on = [ aws_network_acl.public ]
+}
+
+
+resource "aws_network_acl_rule" "public_acl" {
+  for_each = {
+    for idx, rule in local.flattened_inbound_acl_rules :
+    "${rule.acl_key}-${rule.rule_number}" => rule
+  }
+
+  network_acl_id  = aws_network_acl.public[each.value.acl_key].id
+  rule_number     = each.value.rule_number
+  egress          = each.value.egress
+  protocol        = each.value.protocol
+  rule_action     = each.value.rule_action
+  cidr_block      = lookup(each.value, "cidr_block", null)
+  ipv6_cidr_block = lookup(each.value, "ipv6_cidr_block", null)
+  from_port       = each.value.from_port
+  to_port         = each.value.to_port
+
+  depends_on = [ aws_network_acl_association.public ]
+}
+
 
