@@ -122,21 +122,40 @@ variable "set_database_subnet_nat_az_connection" {
 # START: Subnet Variables
 # ─────────────────────────────
 variable "public_subnets" {
-  type        = list(string)
-  description = "List of public subnet CIDRs"
-  default     = []
+  type        = map(list(string))
+  description = "List of public subnet CIDRs per AZ"
+  default     = {}
+  validation {
+    condition = alltrue([
+      for az, cidrs in var.public_subnets : contains(var.azs, az)
+    ])
+    error_message = "Specified AZ keys should exists on var.azs"
+  }
 }
 
+
 variable "private_subnets" {
-  type        = list(string)
-  description = "List of private subnet CIDR blocks"
-  default     = []
+  type        = map(list(string))
+  description = "List of private subnet CIDRs per AZ"
+  default     = {}
+  validation {
+    condition = alltrue([
+      for az, cidrs in var.private_subnets : contains(var.azs, az)
+    ])
+    error_message = "Specified AZ keys should exists on var.azs"
+  }
 }
 
 variable "database_subnets" {
-  type        = list(string)
-  description = "List of database subnet CIDR blocks"
-  default     = []
+  type        = map(list(string))
+  description = "List of database subnet CIDRs per AZ"
+  default     = {}
+  validation {
+    condition = alltrue([
+      for az, cidrs in var.database_subnets : contains(var.azs, az)
+    ])
+    error_message = "Specified AZ keys should exists on var.azs"
+  }
 }
 
 # ─────────────────────────────
@@ -152,13 +171,56 @@ variable "public_acls" {
   default     = []
 }
 
-variable "public_common_acl_rules" {
+variable "private_acls" {
+  type        = list(string)
+  description = "List of Private Subnets to have an NACL"
+  default     = []
+}
+
+variable "database_acls" {
+  type        = list(string)
+  description = "List of Database Subnets to have an NACL"
+  default     = []
+}
+
+variable "nacl_enable_public_bidirectional_rule" {
+  type        = bool
+  description = "Enabling this flag automaticly applies inbound rules to outbound"
+  default     = true
+}
+
+variable "nacl_enable_private_bidirectional_rule" {
+  type        = bool
+  description = "Enabling this flag automaticly applies inbound rules to outbound"
+  default     = true
+}
+
+variable "nacl_enable_database_bidirectional_rule" {
+  type        = bool
+  description = "Enabling this flag automaticly applies inbound rules to outbound"
+  default     = true
+}
+
+
+
+variable "nacl_public_common_rules" {
+  type    = list(string)
+  default = []
+}
+
+variable "nacl_private_common_rules" {
+  type    = list(string)
+  default = []
+}
+
+variable "nacl_database_common_rules" {
   type    = list(string)
   default = []
 }
 
 
-variable "public_inbound_acl_rules" {
+
+variable "nacl_public_inbound_rules" {
   type = map(list(object({
     rule_number     = number
     egress          = bool
@@ -169,9 +231,86 @@ variable "public_inbound_acl_rules" {
     from_port       = number
     to_port         = number
   })))
-  description = "Map of NACL rules for Public Subnets NACLs with port range"
+  description = "Inbound NACL rules for Public Subnets NACLs with port range"
   default     = {}
 }
+
+variable "nacl_public_outbound_rules" {
+  type = map(list(object({
+    rule_number     = number
+    egress          = bool
+    protocol        = string
+    rule_action     = string
+    cidr_block      = optional(string)
+    ipv6_cidr_block = optional(string)
+    from_port       = number
+    to_port         = number
+  })))
+  description = "Outbound NACL rules for Public Subnets NACLs with port range"
+  default     = {}
+}
+
+
+variable "nacl_private_inbound_rules" {
+  type = map(list(object({
+    rule_number     = number
+    egress          = bool
+    protocol        = string
+    rule_action     = string
+    cidr_block      = optional(string)
+    ipv6_cidr_block = optional(string)
+    from_port       = number
+    to_port         = number
+  })))
+  description = "Inbound NACL rules for Public Subnets NACLs with port range"
+  default     = {}
+}
+
+variable "nacl_private_outbound_rules" {
+  type = map(list(object({
+    rule_number     = number
+    egress          = bool
+    protocol        = string
+    rule_action     = string
+    cidr_block      = optional(string)
+    ipv6_cidr_block = optional(string)
+    from_port       = number
+    to_port         = number
+  })))
+  description = "Outbound NACL rules for Public Subnets NACLs with port range"
+  default     = {}
+}
+
+variable "nacl_database_inbound_rules" {
+  type = map(list(object({
+    rule_number     = number
+    egress          = bool
+    protocol        = string
+    rule_action     = string
+    cidr_block      = optional(string)
+    ipv6_cidr_block = optional(string)
+    from_port       = number
+    to_port         = number
+  })))
+  description = "Inbound NACL rules for Database Subnets NACLs with port range"
+  default     = {}
+}
+
+variable "nacl_database_outbound_rules" {
+  type = map(list(object({
+    rule_number     = number
+    egress          = bool
+    protocol        = string
+    rule_action     = string
+    cidr_block      = optional(string)
+    ipv6_cidr_block = optional(string)
+    from_port       = number
+    to_port         = number
+  })))
+  description = "Outbound NACL rules for Database Subnets NACLs with port range"
+  default     = {}
+}
+
 
 # ─────────────────────────────
 # END: NACL Variables

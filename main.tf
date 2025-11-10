@@ -11,6 +11,7 @@ resource "aws_vpc" "vpc" {
 
 # Create an Internet Gateway
 resource "aws_internet_gateway" "igw" {
+
   vpc_id = aws_vpc.vpc.id
   tags = merge(local.default_tags, {
     Name = format("%s-%s", local.namespace, local.IGW)
@@ -44,10 +45,9 @@ resource "aws_nat_gateway" "nat" {
 
 # Create Public Subnets
 resource "aws_subnet" "public" {
-  for_each = local.keys_pub_sub
+  for_each = local.map_public_subnets
 
   vpc_id            = aws_vpc.vpc.id
-  region            = var.region
   cidr_block        = each.value.cidr
   availability_zone = each.value.az
 
@@ -60,7 +60,7 @@ resource "aws_subnet" "public" {
 
 # Create Private Subnets
 resource "aws_subnet" "private" {
-  for_each = local.keys_prv_sub
+  for_each = local.map_private_subnets
 
   vpc_id            = aws_vpc.vpc.id
   region            = var.region
@@ -76,7 +76,7 @@ resource "aws_subnet" "private" {
 
 # Create Database Subnets
 resource "aws_subnet" "database" {
-  for_each = local.keys_db_sub
+  for_each = local.map_database_subnets
 
   vpc_id            = aws_vpc.vpc.id
   region            = var.region
@@ -127,7 +127,7 @@ resource "aws_route_table" "database" {
 
 # Associate Public Subnets with Public Route Table
 resource "aws_route_table_association" "public" {
-  for_each       = local.keys_pub_sub
+  for_each       = local.map_public_subnets
   subnet_id      = aws_subnet.public[each.key].id
   route_table_id = aws_route_table.public.id
 
@@ -136,7 +136,7 @@ resource "aws_route_table_association" "public" {
 
 # # Associate Private Subnets with Private Route Table
 resource "aws_route_table_association" "private" {
-  for_each = local.keys_prv_sub
+  for_each = local.map_private_subnets
 
   subnet_id      = aws_subnet.private[each.key].id
   route_table_id = aws_route_table.private[each.value.short_az].id
@@ -146,7 +146,7 @@ resource "aws_route_table_association" "private" {
 
 # Associate Database Subnets with Private Route Table
 resource "aws_route_table_association" "database" {
-  for_each = local.keys_db_sub
+  for_each = local.map_database_subnets
 
   subnet_id      = aws_subnet.database[each.key].id
   route_table_id = aws_route_table.database[each.value.short_az].id
@@ -154,45 +154,8 @@ resource "aws_route_table_association" "database" {
   depends_on = [aws_route_table.database]
 }
 
-# Create Public Network ACL
-resource "aws_network_acl" "public" {
-  for_each = toset(var.public_acls)
-  vpc_id   = aws_vpc.vpc.id
-
-  tags = merge(local.default_tags, {
-    Name = format("%s-%s", local.namespace, local.PUB_NACL)
-  })
-
-  depends_on = [aws_subnet.public]
-
-}
-
-resource "aws_network_acl_association" "public" {
-  for_each = toset(var.public_acls)
-  network_acl_id = aws_network_acl.public[each.key].id
-  subnet_id      = aws_subnet.public[each.key].id
-
-  depends_on = [ aws_network_acl.public ]
-}
 
 
-resource "aws_network_acl_rule" "public_acl" {
-  for_each = {
-    for idx, rule in local.flattened_inbound_acl_rules :
-    "${rule.acl_key}-${rule.rule_number}" => rule
-  }
 
-  network_acl_id  = aws_network_acl.public[each.value.acl_key].id
-  rule_number     = each.value.rule_number
-  egress          = each.value.egress
-  protocol        = each.value.protocol
-  rule_action     = each.value.rule_action
-  cidr_block      = lookup(each.value, "cidr_block", null)
-  ipv6_cidr_block = lookup(each.value, "ipv6_cidr_block", null)
-  from_port       = each.value.from_port
-  to_port         = each.value.to_port
-
-  depends_on = [ aws_network_acl_association.public ]
-}
 
 
