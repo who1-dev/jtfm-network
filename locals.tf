@@ -2,7 +2,6 @@ locals {
   # Local name
   namespace = upper(format("%s-%s-%s", var.namespace, var.env, local.VPC))
 
-
   # Sorted AZs
   sorted_azs = sort(var.azs)
 
@@ -12,12 +11,9 @@ locals {
     { for az in local.sorted_azs : upper(regex(local.REGEX_AZ_SHORT, az)[0]) => az }
   )
 
-  # Generic Lists
-  list_az_keys = [for az in local.sorted_azs : local.dict_azs[az]]
-
 
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  # START: SUBNET Related Locals
+  # SUBNET Related Locals
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
   # Generate subnet keys: e.g., 1A1, 1A2, 1B1, 1B2 for 2 AZs and 4 subnets | 3 AZs and 5 subnets : 1A1, 1B1, 1C1, 2A1, 2B1
@@ -42,13 +38,9 @@ locals {
     }
   ]...)
 
-  # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  # END: SUBNET Related Locals
-  # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
 
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  # START: ROUTE TABLE Related Locals
+  # ROUTE TABLE Related Locals
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
   list_public_az_keys   = [for az, cidrs in var.public_subnets : local.dict_azs[az] if contains(keys(local.dict_azs), az) && length(cidrs) > 0]
@@ -63,76 +55,19 @@ locals {
   )
 
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  # START: END TABLE Related Locals
+  # NACL Related Locals
+  #   # By default: nacl_enable_public_bidirectional_rule is set to true
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 
-  # Merge common rules into each ACL entry
-  nacl_public_inbound_rules = length(var.nacl_public_inbound_rules) == 0 ? var.nacl_public_inbound_rules : {
-    for key, rules in var.nacl_public_inbound_rules : key => concat(
-      rules,
-      [
-        for protocol in var.nacl_public_common_rules : local.NACL_COMMON_RULES[protocol]
-      ]
-    )
-  }
-
-  nacl_public_outbound_rules = length(var.nacl_public_outbound_rules) == 0 ? var.nacl_public_outbound_rules : {
-    for key, rules in var.nacl_public_outbound_rules : key => concat(
-      rules,
-      [
-        for protocol in var.nacl_public_common_rules : local.NACL_COMMON_RULES[protocol]
-      ]
-    )
-  }
-
-  # PRIVATE NACL - INBOUND
-  nacl_private_inbound_rules = length(var.nacl_private_inbound_rules) == 0 ? var.nacl_private_inbound_rules : {
-    for key, rules in var.nacl_private_inbound_rules : key => concat(
-      rules,
-      [
-        for protocol in var.nacl_private_common_rules : local.NACL_COMMON_RULES[protocol]
-      ]
-    )
-  }
-
-  # PRIVATE NACL - OUTBOUND
-  nacl_private_outbound_rules = length(var.nacl_private_outbound_rules) == 0 ? var.nacl_private_outbound_rules : {
-    for key, rules in var.nacl_private_outbound_rules : key => concat(
-      rules,
-      [
-        for protocol in var.nacl_private_common_rules : local.NACL_COMMON_RULES[protocol]
-      ]
-    )
-  }
-
-
-  # DATABASE NACL - INBOUND
-  nacl_database_inbound_rules = length(var.nacl_database_inbound_rules) == 0 ? var.nacl_database_inbound_rules : {
-    for key, rules in var.nacl_database_inbound_rules : key => concat(
-      rules,
-      [
-        for protocol in var.nacl_database_common_rules : local.NACL_COMMON_RULES[protocol]
-      ]
-    )
-  }
-
-  # DATABASE NACL - OUTBOUND
-  nacl_database_outbound_rules = length(var.nacl_database_outbound_rules) == 0 ? var.nacl_database_outbound_rules : {
-    for key, rules in var.nacl_database_outbound_rules : key => concat(
-      rules,
-      [
-        for protocol in var.nacl_database_common_rules : local.NACL_COMMON_RULES[protocol]
-      ]
-    )
-  }
-
-
-
-
-
+  # PUBLIC NACL Rules ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   flattened_public_inbound_acl_rules = flatten([
-    for acl_key, rules in local.nacl_public_inbound_rules : [
+    for acl_key, rules in {
+      for key, rule_set in var.nacl_public_inbound_rules : key => concat(
+        rule_set,
+        [for protocol in var.nacl_public_common_rules : local.NACL_COMMON_RULES[protocol]]
+      )
+      } : [
       for rule in rules : {
         acl_key         = acl_key
         rule_number     = rule.rule_number
@@ -147,7 +82,12 @@ locals {
   ])
 
   flattened_public_outbound_acl_rules = var.nacl_enable_public_bidirectional_rule ? local.flattened_public_inbound_acl_rules : flatten([
-    for acl_key, rules in local.nacl_public_outbound_rules : [
+    for acl_key, rules in {
+      for key, rule_set in var.nacl_public_outbound_rules : key => concat(
+        rule_set,
+        [for protocol in var.nacl_public_common_rules : local.NACL_COMMON_RULES[protocol]]
+      )
+      } : [
       for rule in rules : {
         acl_key         = acl_key
         rule_number     = rule.rule_number
@@ -162,8 +102,14 @@ locals {
   ])
 
 
+  # PRIVATE NACL Rules ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   flattened_private_inbound_acl_rules = flatten([
-    for acl_key, rules in local.nacl_private_inbound_rules : [
+    for acl_key, rules in {
+      for key, rule_set in var.nacl_private_inbound_rules : key => concat(
+        rule_set,
+        [for protocol in var.nacl_private_common_rules : local.NACL_COMMON_RULES[protocol]]
+      )
+      } : [
       for rule in rules : {
         acl_key         = acl_key
         rule_number     = rule.rule_number
@@ -178,7 +124,12 @@ locals {
   ])
 
   flattened_private_outbound_acl_rules = var.nacl_enable_private_bidirectional_rule ? local.flattened_private_inbound_acl_rules : flatten([
-    for acl_key, rules in local.nacl_private_outbound_rules : [
+    for acl_key, rules in {
+      for key, rule_set in var.nacl_private_outbound_rules : key => concat(
+        rule_set,
+        [for protocol in var.nacl_private_common_rules : local.NACL_COMMON_RULES[protocol]]
+      )
+      } : [
       for rule in rules : {
         acl_key         = acl_key
         rule_number     = rule.rule_number
@@ -192,9 +143,14 @@ locals {
     ]
   ])
 
-
+  # DATABASE NACL Rules ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   flattened_database_inbound_acl_rules = flatten([
-    for acl_key, rules in local.nacl_database_inbound_rules : [
+    for acl_key, rules in {
+      for key, rule_set in var.nacl_database_inbound_rules : key => concat(
+        rule_set,
+        [for protocol in var.nacl_database_common_rules : local.NACL_COMMON_RULES[protocol]]
+      )
+      } : [
       for rule in rules : {
         acl_key         = acl_key
         rule_number     = rule.rule_number
@@ -209,7 +165,12 @@ locals {
   ])
 
   flattened_database_outbound_acl_rules = var.nacl_enable_database_bidirectional_rule ? local.flattened_database_inbound_acl_rules : flatten([
-    for acl_key, rules in local.nacl_database_outbound_rules : [
+    for acl_key, rules in {
+      for key, rule_set in var.nacl_database_outbound_rules : key => concat(
+        rule_set,
+        [for protocol in var.nacl_database_common_rules : local.NACL_COMMON_RULES[protocol]]
+      )
+      } : [
       for rule in rules : {
         acl_key         = acl_key
         rule_number     = rule.rule_number
@@ -222,7 +183,6 @@ locals {
       }
     ]
   ])
-
 
 
 }

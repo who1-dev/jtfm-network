@@ -165,19 +165,19 @@ variable "database_subnets" {
 # ─────────────────────────────
 # START: NACL Variables
 # ─────────────────────────────
-variable "public_acls" {
+variable "nacls_public" {
   type        = list(string)
   description = "List of Public Subnets to have an NACL"
   default     = []
 }
 
-variable "private_acls" {
+variable "nacls_private" {
   type        = list(string)
   description = "List of Private Subnets to have an NACL"
   default     = []
 }
 
-variable "database_acls" {
+variable "nacls_database" {
   type        = list(string)
   description = "List of Database Subnets to have an NACL"
   default     = []
@@ -223,7 +223,6 @@ variable "nacl_database_common_rules" {
 variable "nacl_public_inbound_rules" {
   type = map(list(object({
     rule_number     = number
-    egress          = bool
     protocol        = string
     rule_action     = string
     cidr_block      = optional(string)
@@ -233,12 +232,17 @@ variable "nacl_public_inbound_rules" {
   })))
   description = "Inbound NACL rules for Public Subnets NACLs with port range"
   default     = {}
+  validation {
+    condition = alltrue([
+      for key, rules in var.nacl_public_inbound_rules : contains(var.nacls_public, key)
+    ])
+    error_message = "Specified Subnet key should exists on var.nacls_public"
+  }
 }
 
 variable "nacl_public_outbound_rules" {
   type = map(list(object({
     rule_number     = number
-    egress          = bool
     protocol        = string
     rule_action     = string
     cidr_block      = optional(string)
@@ -248,13 +252,18 @@ variable "nacl_public_outbound_rules" {
   })))
   description = "Outbound NACL rules for Public Subnets NACLs with port range"
   default     = {}
+  validation {
+    condition = alltrue([
+      for key, rules in var.nacl_public_outbound_rules : contains(var.nacls_public, key)
+    ])
+    error_message = "Specified Subnet key should exists on var.nacls_public"
+  }
 }
 
 
 variable "nacl_private_inbound_rules" {
   type = map(list(object({
     rule_number     = number
-    egress          = bool
     protocol        = string
     rule_action     = string
     cidr_block      = optional(string)
@@ -264,12 +273,17 @@ variable "nacl_private_inbound_rules" {
   })))
   description = "Inbound NACL rules for Public Subnets NACLs with port range"
   default     = {}
+  validation {
+    condition = alltrue([
+      for key, rules in var.nacl_private_inbound_rules : contains(var.nacls_private, key)
+    ])
+    error_message = "Specified Subnet key should exists on var.nacls_public"
+  }
 }
 
 variable "nacl_private_outbound_rules" {
   type = map(list(object({
     rule_number     = number
-    egress          = bool
     protocol        = string
     rule_action     = string
     cidr_block      = optional(string)
@@ -279,12 +293,17 @@ variable "nacl_private_outbound_rules" {
   })))
   description = "Outbound NACL rules for Public Subnets NACLs with port range"
   default     = {}
+  validation {
+    condition = alltrue([
+      for key, rules in var.nacl_private_outbound_rules : contains(var.nacls_private, key)
+    ])
+    error_message = "Specified Subnet key should exists on var.nacls_public"
+  }
 }
 
 variable "nacl_database_inbound_rules" {
   type = map(list(object({
     rule_number     = number
-    egress          = bool
     protocol        = string
     rule_action     = string
     cidr_block      = optional(string)
@@ -294,12 +313,17 @@ variable "nacl_database_inbound_rules" {
   })))
   description = "Inbound NACL rules for Database Subnets NACLs with port range"
   default     = {}
+  validation {
+    condition = alltrue([
+      for key, rules in var.nacl_database_inbound_rules : contains(var.nacls_database, key)
+    ])
+    error_message = "Specified Subnet key should exists on var.nacls_public"
+  }
 }
 
 variable "nacl_database_outbound_rules" {
   type = map(list(object({
     rule_number     = number
-    egress          = bool
     protocol        = string
     rule_action     = string
     cidr_block      = optional(string)
@@ -309,6 +333,12 @@ variable "nacl_database_outbound_rules" {
   })))
   description = "Outbound NACL rules for Database Subnets NACLs with port range"
   default     = {}
+  validation {
+    condition = alltrue([
+      for key, rules in var.nacl_database_outbound_rules : contains(var.nacls_database, key)
+    ])
+    error_message = "Specified Subnet key should exists on var.nacls_public"
+  }
 }
 
 

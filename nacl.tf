@@ -1,6 +1,11 @@
 # Create Public Network ACL
+
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+# PUBLIC NACL Resources
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
 resource "aws_network_acl" "public" {
-  for_each = toset(var.public_acls)
+  for_each = toset(var.nacls_public)
   vpc_id   = aws_vpc.vpc.id
 
   tags = merge(local.default_tags, {
@@ -8,11 +13,10 @@ resource "aws_network_acl" "public" {
   })
 
   depends_on = [aws_subnet.public]
-
 }
 
 resource "aws_network_acl_association" "public" {
-  for_each       = toset(var.public_acls)
+  for_each       = toset(var.nacls_public)
   network_acl_id = aws_network_acl.public[each.key].id
   subnet_id      = aws_subnet.public[each.key].id
 
@@ -58,9 +62,13 @@ resource "aws_network_acl_rule" "public_outbound" {
   depends_on = [aws_network_acl_association.public]
 }
 
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+# PRIVATE NACL Resources
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
 # Create private Network ACL
 resource "aws_network_acl" "private" {
-  for_each = toset(var.private_acls)
+  for_each = toset(var.nacls_private)
   vpc_id   = aws_vpc.vpc.id
 
   tags = merge(local.default_tags, {
@@ -72,7 +80,7 @@ resource "aws_network_acl" "private" {
 }
 
 resource "aws_network_acl_association" "private" {
-  for_each       = toset(var.private_acls)
+  for_each       = toset(var.nacls_private)
   network_acl_id = aws_network_acl.private[each.key].id
   subnet_id      = aws_subnet.private[each.key].id
 
@@ -118,9 +126,14 @@ resource "aws_network_acl_rule" "private_outbound" {
   depends_on = [aws_network_acl_association.private]
 }
 
+
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+# DATABASE NACL Resources
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
 # Create database Network ACL
 resource "aws_network_acl" "database" {
-  for_each = toset(var.database_acls)
+  for_each = toset(var.nacls_database)
   vpc_id   = aws_vpc.vpc.id
 
   tags = merge(local.default_tags, {
@@ -132,7 +145,7 @@ resource "aws_network_acl" "database" {
 }
 
 resource "aws_network_acl_association" "database" {
-  for_each       = toset(var.database_acls)
+  for_each       = toset(var.nacls_database)
   network_acl_id = aws_network_acl.database[each.key].id
   subnet_id      = aws_subnet.database[each.key].id
 
