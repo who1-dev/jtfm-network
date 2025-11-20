@@ -44,15 +44,15 @@ locals {
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
   list_public_az_keys = [for az, cidrs in var.public_subnets : local.dict_azs[az] if contains(keys(local.dict_azs), az) && length(cidrs) > 0]
-  # list_private_az_keys  = [for az, cidrs in var.private_subnets : local.dict_azs[az] if contains(keys(local.dict_azs), az) && length(cidrs) > 0]
-  # list_database_az_keys = [for az, cidrs in var.database_subnets : local.dict_azs[az] if contains(keys(local.dict_azs), az) && length(cidrs) > 0]
 
 
   # NAT Gateway related AZ keys | NOTE: NAT will always be deployed in First Public Subnet of each AZs only
-  list_nat_az_keys = !var.enable_nat_gateway ? [] : length(var.set_nat_deployment_az_location) == 0 ? [local.list_public_az_keys[0]] : (var.deploy_nat_in_all_public_azs ?
-    local.list_public_az_keys : [for az in var.set_nat_deployment_az_location : local.dict_azs[az]
-    if contains(local.list_public_az_keys, local.dict_azs[az])]
-  )
+  list_nat_az_keys = !var.enable_nat_gateway ? [] : var.deploy_nat_in_all_public_azs ? local.list_public_az_keys : length(var.set_nat_deployment_az_location) == 0 ? [local.list_public_az_keys[0]] : [
+    for az in var.set_nat_deployment_az_location : local.dict_azs[az]
+    if contains(local.list_public_az_keys, local.dict_azs[az])
+  ]
+
+
 
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   # NACL Related Locals

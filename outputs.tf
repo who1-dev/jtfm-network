@@ -1,12 +1,3 @@
-# output "mapper" {
-#   description = "Mapper of created resources"
-#   value = {
-#     map_public_subnets   = local.map_public_subnets
-#     map_private_subnets  = local.map_private_subnets
-#     map_database_subnets = local.map_database_subnets
-#   }
-# }
-
 output "vpc" {
   description = "VPC details"
   value = {

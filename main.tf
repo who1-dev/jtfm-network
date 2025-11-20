@@ -1,8 +1,10 @@
 # Create a VPC
 resource "aws_vpc" "vpc" {
-  region           = var.region
-  cidr_block       = var.cidr_block
-  instance_tenancy = var.instance_tenancy
+  region               = var.region
+  cidr_block           = var.cidr_block
+  instance_tenancy     = var.instance_tenancy
+  enable_dns_support   = var.enable_dns_support
+  enable_dns_hostnames = var.enable_dns_hostnames
 
   tags = merge(local.default_tags, {
     Name = local.namespace
@@ -34,7 +36,7 @@ resource "aws_eip" "nat" {
 resource "aws_nat_gateway" "nat" {
   for_each      = toset(local.list_nat_az_keys)
   allocation_id = aws_eip.nat[each.key].id
-  subnet_id     = aws_subnet.public[format("%s1", each.key)].id # Assuming NAT is created in the first public subnet of the AZ
+  subnet_id     = aws_subnet.public[format("%s1", each.key)].id # Assuming NAT is always created at the first public subnet of the AZ
 
   tags = merge(local.default_tags, {
     Name = format("%s-%s-%s", local.namespace, local.NATGW, each.key)

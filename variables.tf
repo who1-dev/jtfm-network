@@ -10,8 +10,7 @@ variable "namespace" {
 }
 
 # ─────────────────────────────
-# START: VPC Specific details
-# ─────────────────────────────
+# START: VPC Specific details ─────────────────────────────
 
 variable "region" {
   type        = string
@@ -30,21 +29,27 @@ variable "instance_tenancy" {
   description = "Instance tenancy for the VPC"
   default     = "default"
 }
+variable "enable_dns_support" {
+  type        = bool
+  description = "Enable DNS support in the VPC"
+  default     = true
+}
+variable "enable_dns_hostnames" {
+  type        = bool
+  description = "Enable DNS hostnames in the VPC"
+  default     = false
+}
 
 variable "azs" {
   type        = list(string)
   description = "List of Availability zones to be used in the VPC"
 }
+# ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 
-# ─────────────────────────────
-# END: VPC Specific details
-# ─────────────────────────────
 
 
-# ─────────────────────────────
-# START: NAT Gateway related Variables
-# ─────────────────────────────
+# START: NAT Gateway related Variables ──────────────────────────────────────────────────────────────────────────────────────────────────────────────-
 variable "enable_nat_gateway" {
   type        = bool
   description = "Enable NAT Gateway for private subnets"
@@ -73,54 +78,13 @@ variable "set_nat_deployment_az_location" {
     error_message = "All values in set_nat_az_location must be valid Availability Zones defined in var.azs."
   }
 }
-
-variable "enable_nat_access_to_all_private_subnets" {
-  type        = bool
-  description = "This flag will create routes for Private Subnets NAT Access"
-  default     = false
-}
-
-variable "enable_nat_access_to_all_database_subnets" {
-  type        = bool
-  description = "This flag will create routes for Database Subnets NAT Access"
-  default     = false
-}
-
-variable "set_private_subnet_nat_az_connection" {
-  type        = list(string)
-  description = "A list of Availability Zones to connect Private Subnets to NAT Gateways. Must be a subset of var.azs."
-  default     = []
-  validation {
-    # Check if all elements in set_nat_private_subnet_az_connection are present in var.azs
-    condition = alltrue([
-      for az in var.set_private_subnet_nat_az_connection : contains(var.azs, az)
-    ])
-    error_message = "All values in set_nat_private_subnet_az_connection must be valid Availability Zones defined in var.azs."
-  }
-}
-
-variable "set_database_subnet_nat_az_connection" {
-  type        = list(string)
-  description = "A list of Availability Zones to connect Database Subnets to NAT Gateways. Must be a subset of var.azs."
-  default     = []
-  validation {
-    # Check if all elements in set_nat_database_subnet_az_connection are present in var.azs
-    condition = alltrue([
-      for az in var.set_database_subnet_nat_az_connection : contains(var.azs, az)
-    ])
-    error_message = "All values in set_nat_database_subnet_az_connection must be valid Availability Zones defined in var.azs."
-  }
-}
-
-# ─────────────────────────────
-# END: NAT Gateway related Variables
-# ─────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 
 
-# ─────────────────────────────
-# START: Subnet Variables
-# ─────────────────────────────
+
+# START: Subnet Variables ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
 variable "public_subnets" {
   type        = map(list(string))
   description = "List of public subnet CIDRs per AZ"
@@ -158,13 +122,11 @@ variable "database_subnets" {
   }
 }
 
-# ─────────────────────────────
-# END: Subnet Variables
-# ─────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-# ─────────────────────────────
-# START: NACL Variables
-# ─────────────────────────────
+
+
+# START: NACL Variables ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 variable "nacls_public" {
   type        = list(string)
   description = "List of Public Subnets to have an NACL"
@@ -340,9 +302,5 @@ variable "nacl_database_outbound_rules" {
     error_message = "Specified Subnet key should exists on var.nacls_public"
   }
 }
-
-
-# ─────────────────────────────
-# END: NACL Variables
-# ─────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
