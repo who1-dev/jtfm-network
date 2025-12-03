@@ -52,13 +52,28 @@ locals {
     if contains(local.list_public_az_keys, local.dict_azs[az])
   ]
 
+  # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  # Security Group Related Locals
+  # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
+  flattened_security_group_ingress_rules = flatten([
+    for key, details in var.security_groups : [
+      for idx, rule in details.rules : {
+        key                           = key
+        ing_key                       = format("%s-%d", key, idx + 1)
+        referenced_security_group_key = lookup(rule, "referenced_security_group_key", null)
+        ip_protocol                   = lookup(rule, "ip_protocol", "tcp")
+        port                          = rule.port
+        cidr_block                    = rule.cidr_block
+        description                   = lookup(rule, "description", null)
+      }
+    ]
+  ])
 
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   # NACL Related Locals
   #   # By default: nacl_enable_public_bidirectional_rule is set to true
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
 
   # PUBLIC NACL Rules ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   flattened_public_inbound_acl_rules = flatten([

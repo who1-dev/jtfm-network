@@ -49,6 +49,9 @@ variable "azs" {
 
 
 
+
+
+
 # START: NAT Gateway related Variables ──────────────────────────────────────────────────────────────────────────────────────────────────────────────-
 variable "enable_nat_gateway" {
   type        = bool
@@ -122,6 +125,24 @@ variable "database_subnets" {
   }
 }
 
+# ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+# START: Security Group related Variables ──────────────────────────────────────────────────────────────────────────────────────────────────────────────-
+variable "security_groups" {
+  type = map(object({
+    name        = string
+    description = string
+    rules = list(object({
+      port                          = number
+      cidr_block                    = optional(string)
+      referenced_security_group_key = optional(string, null)
+      ip_protocol                   = optional(string, "tcp")
+    }))
+  }))
+  description = "Map of security groups"
+  default     = {}
+}
 # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 

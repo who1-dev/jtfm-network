@@ -31,6 +31,8 @@ output "nat_gateways" {
 }
 
 
+# WARNING!!! Changing the outputs below will require changes in the dependent module
+# Dependencies : [APPLCATION MODULE > LOCALS_CONSTANT.TF]
 output "public_subnets" {
   description = "List of public subnet CIDRs per AZ"
   value = {
@@ -69,4 +71,3 @@ output "database_subnets" {
     }
   }
 }
-
