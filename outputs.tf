@@ -33,6 +33,19 @@ output "nat_gateways" {
 
 # WARNING!!! Changing the outputs below will require changes in the dependent module
 # Dependencies : [APPLCATION MODULE > LOCALS_CONSTANT.TF]
+
+output "security_groups" {
+  description = "List of Security Groups"
+  value = {
+    for key, details in aws_security_group.this : key => {
+      id          = details.id
+      arn         = details.arn
+      name        = details.name
+      description = details.description
+    }
+  }
+}
+
 output "public_subnets" {
   description = "List of public subnet CIDRs per AZ"
   value = {
