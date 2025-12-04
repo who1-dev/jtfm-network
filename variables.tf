@@ -325,3 +325,14 @@ variable "nacl_database_outbound_rules" {
 }
 # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
+
+variable "interface_endpoints" {
+  type = map(object({
+    subnet_keys         = list(string)
+    security_group_keys = list(string)
+  }))
+  description = "Map of Interface VPC Endpoints"
+  default     = {}
+}
+
+

@@ -61,4 +61,11 @@ locals {
       to_port         = 443
     }
   }
+
+  VPC_ENDPOINT_SERVICES = {
+    SSM = ["ssm", "ssmmessages", "ec2messages"]
+  }
+
 }
+
+
