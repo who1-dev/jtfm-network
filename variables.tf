@@ -9,14 +9,15 @@ variable "namespace" {
   description = "Project namespace"
 }
 
-# ─────────────────────────────
-# START: VPC Specific details ─────────────────────────────
-
 variable "region" {
   type        = string
   description = "AWS region to deploy resources"
   default     = "us-east-1"
 }
+
+# ─────────────────────────────
+# START: VPC Specific details ─────────────────────────────
+
 
 variable "cidr_block" {
   type        = string
@@ -80,6 +81,17 @@ variable "set_nat_deployment_az_location" {
     ])
     error_message = "All values in set_nat_az_location must be valid Availability Zones defined in var.azs."
   }
+}
+# ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+# START: VPC endpoint related Variables ──────────────────────────────────────────────────────────────────────────────────────────────────────────────-
+variable "interface_endpoints" {
+  type = map(object({
+    subnet_keys         = list(string)
+    security_group_keys = list(string)
+  }))
+  description = "Map of Interface VPC Endpoints"
+  default     = {}
 }
 # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -187,20 +199,22 @@ variable "nacl_enable_database_bidirectional_rule" {
 
 
 variable "nacl_public_common_rules" {
-  type    = list(string)
-  default = []
+  type        = list(string)
+  description = "Implement common rules across all public NACLs"
+  default     = []
 }
 
 variable "nacl_private_common_rules" {
-  type    = list(string)
-  default = []
+  type        = list(string)
+  description = "Implement common rules across all private NACLs"
+  default     = []
 }
 
 variable "nacl_database_common_rules" {
-  type    = list(string)
-  default = []
+  type        = list(string)
+  description = "Implement common rules across all database NACLs"
+  default     = []
 }
-
 
 
 variable "nacl_public_inbound_rules" {
@@ -326,13 +340,5 @@ variable "nacl_database_outbound_rules" {
 # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 
-variable "interface_endpoints" {
-  type = map(object({
-    subnet_keys         = list(string)
-    security_group_keys = list(string)
-  }))
-  description = "Map of Interface VPC Endpoints"
-  default     = {}
-}
 
 

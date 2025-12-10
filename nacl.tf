@@ -35,8 +35,8 @@ resource "aws_network_acl_rule" "public_inbound" {
   egress          = false
   protocol        = each.value.protocol
   rule_action     = each.value.rule_action
-  cidr_block      = lookup(each.value, "cidr_block", null)
-  ipv6_cidr_block = lookup(each.value, "ipv6_cidr_block", null)
+  cidr_block      = each.value.cidr_block
+  ipv6_cidr_block = each.value.ipv6_cidr_block
   from_port       = each.value.from_port
   to_port         = each.value.to_port
 
@@ -54,8 +54,8 @@ resource "aws_network_acl_rule" "public_outbound" {
   egress          = true
   protocol        = each.value.protocol
   rule_action     = each.value.rule_action
-  cidr_block      = lookup(each.value, "cidr_block", null)
-  ipv6_cidr_block = lookup(each.value, "ipv6_cidr_block", null)
+  cidr_block      = each.value.cidr_block
+  ipv6_cidr_block = each.value.ipv6_cidr_block
   from_port       = each.value.from_port
   to_port         = each.value.to_port
 
@@ -99,8 +99,8 @@ resource "aws_network_acl_rule" "private_inbound" {
   egress          = false
   protocol        = each.value.protocol
   rule_action     = each.value.rule_action
-  cidr_block      = lookup(each.value, "cidr_block", null)
-  ipv6_cidr_block = lookup(each.value, "ipv6_cidr_block", null)
+  cidr_block      = each.value.cidr_block
+  ipv6_cidr_block = each.value.ipv6_cidr_block
   from_port       = each.value.from_port
   to_port         = each.value.to_port
 
@@ -118,8 +118,8 @@ resource "aws_network_acl_rule" "private_outbound" {
   egress          = true
   protocol        = each.value.protocol
   rule_action     = each.value.rule_action
-  cidr_block      = lookup(each.value, "cidr_block", null)
-  ipv6_cidr_block = lookup(each.value, "ipv6_cidr_block", null)
+  cidr_block      = each.value.cidr_block
+  ipv6_cidr_block = each.value.ipv6_cidr_block
   from_port       = each.value.from_port
   to_port         = each.value.to_port
 
@@ -164,8 +164,8 @@ resource "aws_network_acl_rule" "database_inbound" {
   egress          = false
   protocol        = each.value.protocol
   rule_action     = each.value.rule_action
-  cidr_block      = lookup(each.value, "cidr_block", null)
-  ipv6_cidr_block = lookup(each.value, "ipv6_cidr_block", null)
+  cidr_block      = each.value.cidr_block
+  ipv6_cidr_block = each.value.ipv6_cidr_block
   from_port       = each.value.from_port
   to_port         = each.value.to_port
 
@@ -183,8 +183,8 @@ resource "aws_network_acl_rule" "database_outbound" {
   egress          = true
   protocol        = each.value.protocol
   rule_action     = each.value.rule_action
-  cidr_block      = lookup(each.value, "cidr_block", null)
-  ipv6_cidr_block = lookup(each.value, "ipv6_cidr_block", null)
+  cidr_block      = each.value.cidr_block
+  ipv6_cidr_block = each.value.ipv6_cidr_block
   from_port       = each.value.from_port
   to_port         = each.value.to_port
 

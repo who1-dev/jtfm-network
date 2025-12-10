@@ -15,7 +15,8 @@ output "igw_id" {
 }
 
 output "azs" {
-  value = { for az in local.sorted_azs : az => upper(regex(local.REGEX_AZ_SHORT, az)[0]) }
+  description = "List of Availability Zones"
+  value       = { for az in local.sorted_azs : az => upper(regex(local.REGEX_AZ_SHORT, az)[0]) }
 }
 
 output "nat_gateways" {
@@ -32,10 +33,9 @@ output "nat_gateways" {
 
 
 # WARNING!!! Changing the outputs below will require changes in the dependent module
-# Dependencies : [APPLCATION MODULE > LOCALS_CONSTANT.TF]
-
+# Dependencies : [APPLICATION MODULE > LOCALS_CONSTANT.TF]
 output "security_groups" {
-  description = "List of Security Groups"
+  description = "List of available Security Groups"
   value = {
     for key, details in aws_security_group.this : key => {
       id          = details.id
@@ -47,7 +47,7 @@ output "security_groups" {
 }
 
 output "public_subnets" {
-  description = "List of public subnet CIDRs per AZ"
+  description = "List of available public subnets"
   value = {
     for key, details in aws_subnet.public : key => {
       id         = details.id
@@ -60,7 +60,7 @@ output "public_subnets" {
 }
 
 output "private_subnets" {
-  description = "List of private subnet CIDRs per AZ"
+  description = "List of available private subnets"
   value = {
     for key, details in aws_subnet.private : key => {
       id         = details.id
@@ -73,7 +73,7 @@ output "private_subnets" {
 }
 
 output "database_subnets" {
-  description = "List of database subnet CIDRs per AZ"
+  description = "List of available database subnets"
   value = {
     for key, details in aws_subnet.database : key => {
       id         = details.id
