@@ -6,13 +6,13 @@ This Terraform module creates and manages a comprehensive AWS networking setup. 
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 6.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | 6.23.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 6.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.23.0 |
 
 ## Modules
 
@@ -22,18 +22,27 @@ No modules.
 
 Based on the file structure, this module manages:
 
-* **VPC Configuration**
-    * Core networking foundation (`main.tf`).
-    * Provides comprehensive key naming for Subnets. 
-    * E.g. 1A1, 1A2, 1B1
-* **Network ACLs**
-    * Stateless network traffic filtering (`nacl.tf`).
-* **Security Groups**
-    * Stateful firewalls for your resources (`security_group.tf`).
-    * Simplifies SG creation, rule association and SG chaining
-* **VPC Endpoints**
-    * Configures Interface and Gateway endpoints for private service access (`endpoints.tf`).
-    * Simplified VPC Endpoint - Interface(Private Link) implementation.
+* **3-Tier VPC Architecture**
+    * Automatically provisions **Public**, **Private**, and **Database** subnet layers across multiple Availability Zones.
+    * Implements a structured naming convention (e.g., `1A1`, `1B1`) to easily identify Region/AZ/Subnet hierarchy.
+    * Configurable DNS support and Hostname settings.
+
+* **Flexible NAT Strategies (Connectivity)**
+    * **High Availability vs. Cost Optimization:** Choose between deploying NAT Gateways in **all** Public AZs (Max HA) or specific subsets (Cost Saving) via `set_nat_deployment_az_location`.
+    * Managed Elastic IP allocation for NAT resources.
+
+* **Advanced Network ACLs (Stateless Security)**
+    * **Automated Bidirectional Logic:** Optional flags (`nacl_enable_*_bidirectional_rule`) to automatically mirror inbound rules to outbound traffic, reducing configuration overhead.
+    * **Common Rule Presets:** fast-track configuration by applying common protocol sets (e.g., `["HTTP", "HTTPS"]`) across specific network layers via `nacl_*_common_rules`.
+    * **Granular Rule Maps:** Full control over Inbound and Outbound rules with support for specific rule numbers, protocols, and CIDR targets.
+
+* **Security Groups (Stateful Firewalls)**
+    * Simplified creation and association of Security Groups.
+    * Supports dynamic ingress rule injection and Security Group chaining (referencing other SGs by key).
+
+* **Private Service Access**
+    * Integrated configuration for **Interface VPC Endpoints** (PrivateLink).
+    * Securely connects subnets to AWS services without traversing the public internet.
 
 ## Resources
 > ### Core
@@ -72,7 +81,7 @@ Based on the file structure, this module manages:
 > ### VPC Endpoints
 | Name | Type |
 |------|------|
-| [aws_vpc_endpoint.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_endpoint) | resource |
+| [aws_vpc_endpoint.interface](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_endpoint) | resource |
 
 ## Data Sources
 | Name | Type |
@@ -85,7 +94,7 @@ Based on the file structure, this module manages:
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_env"></a> [env](#input\_env) | Deployment environment (e.g., dev, prod) | `string` | `"dev"` | no |
-| <a name="input_namespace"></a> [namespace](#input\_namespace) | Project namespace | `string` | n/a | yes |
+| <a name="input_namespace"></a> [namespace](#input\_namespace) | Project namespace | `string` | `jc` | yes |
 | <a name="input_region"></a> [region](#input\_region) | AWS region to deploy resources | `string` | `"us-east-1"` | no |
 > ### VPC
 | Name | Description | Type | Default | Required |
@@ -132,9 +141,9 @@ Based on the file structure, this module manages:
 >>>### Example: <pre> nacl_public_common_rules = ["HTTP","HTTPS"] <br/> nacl_database_inbound_rules = { <br/>   "1A1" = [] <br/> } </pre>
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_nacl_public_common_rules"></a> [nacl\_public\_common\_rules](#input\_nacl\_public\_common\_rules) | `Implement common rules across all public NACLs` | `list(string)` | `[]` | no |
-| <a name="input_nacl_private_common_rules"></a> [nacl\_private\_common\_rules](#input\_nacl\_private\_common\_rules) | `Implement common rules across all private NACLs` | `list(string)` | `[]` | no |
-| <a name="input_nacl_database_common_rules"></a> [nacl\_database\_common\_rules](#input\_nacl\_database\_common\_rules) | `Implement common rules across all database NACLs` | `list(string)` | `[]` | no |
+| <a name="input_nacl_public_common_rules"></a> [nacl\_public\_common\_rules](#input\_nacl\_public\_common\_rules) | Implement common rules across all public NACLs | `list(string)` | `[]` | no |
+| <a name="input_nacl_private_common_rules"></a> [nacl\_private\_common\_rules](#input\_nacl\_private\_common\_rules) | Implement common rules across all private NACLs | `list(string)` | `[]` | no |
+| <a name="input_nacl_database_common_rules"></a> [nacl\_database\_common\_rules](#input\_nacl\_database\_common\_rules) | Implement common rules across all database NACLs | `list(string)` | `[]` | no |
 >> ### NACL Bidirectional Rule
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|

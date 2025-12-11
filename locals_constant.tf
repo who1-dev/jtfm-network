@@ -63,9 +63,11 @@ locals {
   }
 
   VPC_ENDPOINT_SERVICES = {
-    SSM = ["ssm", "ssmmessages", "ec2messages"]
+    ECR            = ["ecr.api", "ecr.dkr"]
+    ECS            = ["ecs", "ecs-agent", "ecs-telemetry"]
+    SECRETSMANAGER = ["secretsmanager"]
+    SSM            = ["ssm", "ssmmessages", "ec2messages"]
   }
-
 }
 
 
