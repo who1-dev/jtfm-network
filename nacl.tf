@@ -72,7 +72,7 @@ resource "aws_network_acl" "private" {
   vpc_id   = aws_vpc.vpc.id
 
   tags = merge(local.default_tags, {
-    Name = format("%s-%s", local.namespace, local.PUB_NACL)
+    Name = format("%s-%s", local.namespace, local.PRV_NACL)
   })
 
   depends_on = [aws_subnet.private]
@@ -137,7 +137,7 @@ resource "aws_network_acl" "database" {
   vpc_id   = aws_vpc.vpc.id
 
   tags = merge(local.default_tags, {
-    Name = format("%s-%s", local.namespace, local.PUB_NACL)
+    Name = format("%s-%s", local.namespace, local.DB_NACL)
   })
 
   depends_on = [aws_subnet.database]

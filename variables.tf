@@ -15,10 +15,7 @@ variable "region" {
   default     = "us-east-1"
 }
 
-# ─────────────────────────────
 # START: VPC Specific details ─────────────────────────────
-
-
 variable "cidr_block" {
   type        = string
   description = "CIDR block for the VPC"
@@ -38,7 +35,7 @@ variable "enable_dns_support" {
 variable "enable_dns_hostnames" {
   type        = bool
   description = "Enable DNS hostnames in the VPC"
-  default     = false
+  default     = true
 }
 
 variable "azs" {
