@@ -154,186 +154,91 @@ variable "security_groups" {
 }
 # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-
-
 # START: NACL Variables ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 variable "nacls_public" {
-  type        = list(string)
-  description = "List of Public Subnets to have an NACL"
-  default     = []
+  type = map(object({
+    is_bidirectional = optional(bool, true)
+    common_rules     = optional(list(string), [])
+    inbound_rules = optional(list(object({
+      rule_number     = number
+      protocol        = string
+      rule_action     = string
+      cidr_block      = optional(string)
+      ipv6_cidr_block = optional(string)
+      from_port       = number
+      to_port         = number
+    })), [])
+    outbound_rules = optional(list(object({
+      rule_number     = number
+      protocol        = string
+      rule_action     = string
+      cidr_block      = optional(string)
+      ipv6_cidr_block = optional(string)
+      from_port       = number
+      to_port         = number
+    })), [])
+  }))
+  description = "Map of Public NACLs to create per subnet type"
+  default     = {}
 }
 
 variable "nacls_private" {
-  type        = list(string)
-  description = "List of Private Subnets to have an NACL"
-  default     = []
+  type = map(object({
+    is_bidirectional = optional(bool, true)
+    common_rules     = optional(list(string), [])
+    inbound_rules = optional(list(object({
+      rule_number     = number
+      protocol        = string
+      rule_action     = string
+      cidr_block      = optional(string)
+      ipv6_cidr_block = optional(string)
+      from_port       = number
+      to_port         = number
+    })), [])
+    outbound_rules = optional(list(object({
+      rule_number     = number
+      protocol        = string
+      rule_action     = string
+      cidr_block      = optional(string)
+      ipv6_cidr_block = optional(string)
+      from_port       = number
+      to_port         = number
+    })), [])
+  }))
+  description = "Map of Private NACLs to create per subnet type"
+  default     = {}
+
 }
 
 variable "nacls_database" {
-  type        = list(string)
-  description = "List of Database Subnets to have an NACL"
-  default     = []
-}
-
-variable "nacl_enable_public_bidirectional_rule" {
-  type        = bool
-  description = "Enabling this flag automaticly applies inbound rules to outbound"
-  default     = true
-}
-
-variable "nacl_enable_private_bidirectional_rule" {
-  type        = bool
-  description = "Enabling this flag automaticly applies inbound rules to outbound"
-  default     = true
-}
-
-variable "nacl_enable_database_bidirectional_rule" {
-  type        = bool
-  description = "Enabling this flag automaticly applies inbound rules to outbound"
-  default     = true
-}
-
-
-
-variable "nacl_public_common_rules" {
-  type        = list(string)
-  description = "Implement common rules across all public NACLs"
-  default     = []
-}
-
-variable "nacl_private_common_rules" {
-  type        = list(string)
-  description = "Implement common rules across all private NACLs"
-  default     = []
-}
-
-variable "nacl_database_common_rules" {
-  type        = list(string)
-  description = "Implement common rules across all database NACLs"
-  default     = []
-}
-
-
-variable "nacl_public_inbound_rules" {
-  type = map(list(object({
-    rule_number     = number
-    protocol        = string
-    rule_action     = string
-    cidr_block      = optional(string)
-    ipv6_cidr_block = optional(string)
-    from_port       = number
-    to_port         = number
-  })))
-  description = "Inbound NACL rules for Public Subnets NACLs with port range"
+  type = map(object({
+    is_bidirectional = optional(bool, true)
+    common_rules     = optional(list(string), [])
+    inbound_rules = optional(list(object({
+      rule_number     = number
+      protocol        = string
+      rule_action     = string
+      cidr_block      = optional(string)
+      ipv6_cidr_block = optional(string)
+      from_port       = number
+      to_port         = number
+    })), [])
+    outbound_rules = optional(list(object({
+      rule_number     = number
+      protocol        = string
+      rule_action     = string
+      cidr_block      = optional(string)
+      ipv6_cidr_block = optional(string)
+      from_port       = number
+      to_port         = number
+    })), [])
+  }))
+  description = "Map of Database NACLs to create per subnet type"
   default     = {}
-  validation {
-    condition = alltrue([
-      for key, rules in var.nacl_public_inbound_rules : contains(var.nacls_public, key)
-    ])
-    error_message = "Specified Subnet key should exists on var.nacls_public"
-  }
-}
 
-variable "nacl_public_outbound_rules" {
-  type = map(list(object({
-    rule_number     = number
-    protocol        = string
-    rule_action     = string
-    cidr_block      = optional(string)
-    ipv6_cidr_block = optional(string)
-    from_port       = number
-    to_port         = number
-  })))
-  description = "Outbound NACL rules for Public Subnets NACLs with port range"
-  default     = {}
-  validation {
-    condition = alltrue([
-      for key, rules in var.nacl_public_outbound_rules : contains(var.nacls_public, key)
-    ])
-    error_message = "Specified Subnet key should exists on var.nacls_public"
-  }
 }
 
 
-variable "nacl_private_inbound_rules" {
-  type = map(list(object({
-    rule_number     = number
-    protocol        = string
-    rule_action     = string
-    cidr_block      = optional(string)
-    ipv6_cidr_block = optional(string)
-    from_port       = number
-    to_port         = number
-  })))
-  description = "Inbound NACL rules for Public Subnets NACLs with port range"
-  default     = {}
-  validation {
-    condition = alltrue([
-      for key, rules in var.nacl_private_inbound_rules : contains(var.nacls_private, key)
-    ])
-    error_message = "Specified Subnet key should exists on var.nacls_public"
-  }
-}
-
-variable "nacl_private_outbound_rules" {
-  type = map(list(object({
-    rule_number     = number
-    protocol        = string
-    rule_action     = string
-    cidr_block      = optional(string)
-    ipv6_cidr_block = optional(string)
-    from_port       = number
-    to_port         = number
-  })))
-  description = "Outbound NACL rules for Public Subnets NACLs with port range"
-  default     = {}
-  validation {
-    condition = alltrue([
-      for key, rules in var.nacl_private_outbound_rules : contains(var.nacls_private, key)
-    ])
-    error_message = "Specified Subnet key should exists on var.nacls_public"
-  }
-}
-
-variable "nacl_database_inbound_rules" {
-  type = map(list(object({
-    rule_number     = number
-    protocol        = string
-    rule_action     = string
-    cidr_block      = optional(string)
-    ipv6_cidr_block = optional(string)
-    from_port       = number
-    to_port         = number
-  })))
-  description = "Inbound NACL rules for Database Subnets NACLs with port range"
-  default     = {}
-  validation {
-    condition = alltrue([
-      for key, rules in var.nacl_database_inbound_rules : contains(var.nacls_database, key)
-    ])
-    error_message = "Specified Subnet key should exists on var.nacls_public"
-  }
-}
-
-variable "nacl_database_outbound_rules" {
-  type = map(list(object({
-    rule_number     = number
-    protocol        = string
-    rule_action     = string
-    cidr_block      = optional(string)
-    ipv6_cidr_block = optional(string)
-    from_port       = number
-    to_port         = number
-  })))
-  description = "Outbound NACL rules for Database Subnets NACLs with port range"
-  default     = {}
-  validation {
-    condition = alltrue([
-      for key, rules in var.nacl_database_outbound_rules : contains(var.nacls_database, key)
-    ])
-    error_message = "Specified Subnet key should exists on var.nacls_public"
-  }
-}
 # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 

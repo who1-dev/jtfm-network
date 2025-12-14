@@ -1,0 +1,16 @@
+locals {
+  REGEX_AZ_SHORT = "([0-9]+[a-z])"
+}
+
+output "details" {
+  description = "List of available subnets"
+  value = {
+    for key, details in aws_subnet.this : key => {
+      id         = details.id
+      arn        = details.arn
+      az         = details.availability_zone
+      short_az   = upper(var.dict_azs[details.availability_zone])
+      cidr_block = details.cidr_block
+    }
+  }
+}

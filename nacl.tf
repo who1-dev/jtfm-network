@@ -1,192 +1,47 @@
-# Create Public Network ACL
+module "public_nacls" {
+  source = "./sub_modules/nacls"
 
-# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-# PUBLIC NACL Resources
-# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  # Common Variables
+  namespace    = local.namespace
+  default_tags = local.default_tags
+  vpc_id       = aws_vpc.vpc.id
 
-resource "aws_network_acl" "public" {
-  for_each = toset(var.nacls_public)
-  vpc_id   = aws_vpc.vpc.id
+  # Submodule-specific Variables
+  nacl_type = local.PUB_NACL
+  subnets   = module.public_subnets.details
+  nacls     = var.nacls_public
 
-  tags = merge(local.default_tags, {
-    Name = format("%s-%s", local.namespace, local.PUB_NACL)
-  })
-
-  depends_on = [aws_subnet.public]
+  depends_on = [module.public_subnets]
 }
 
-resource "aws_network_acl_association" "public" {
-  for_each       = toset(var.nacls_public)
-  network_acl_id = aws_network_acl.public[each.key].id
-  subnet_id      = aws_subnet.public[each.key].id
+module "private_nacls" {
+  source = "./sub_modules/nacls"
 
-  depends_on = [aws_network_acl.public]
+  # Common Variables
+  namespace    = local.namespace
+  default_tags = local.default_tags
+  vpc_id       = aws_vpc.vpc.id
+
+  # Submodule-specific Variables
+  nacl_type = local.PRV_NACL
+  subnets   = module.private_subnets.details
+  nacls     = var.nacls_private
+
+  depends_on = [module.private_subnets]
 }
 
+module "database_nacls" {
+  source = "./sub_modules/nacls"
 
-resource "aws_network_acl_rule" "public_inbound" {
-  for_each = {
-    for idx, rule in local.flattened_public_inbound_acl_rules :
-    "${rule.acl_key}-${rule.rule_number}" => rule
-  }
+  # Common Variables
+  namespace    = local.namespace
+  default_tags = local.default_tags
+  vpc_id       = aws_vpc.vpc.id
 
-  network_acl_id  = aws_network_acl.public[each.value.acl_key].id
-  rule_number     = each.value.rule_number
-  egress          = false
-  protocol        = each.value.protocol
-  rule_action     = each.value.rule_action
-  cidr_block      = each.value.cidr_block
-  ipv6_cidr_block = each.value.ipv6_cidr_block
-  from_port       = each.value.from_port
-  to_port         = each.value.to_port
+  # Submodule-specific Variables
+  nacl_type = local.DB_NACL
+  subnets   = module.database_subnets.details
+  nacls     = var.nacls_database
 
-  depends_on = [aws_network_acl_association.public]
-}
-
-resource "aws_network_acl_rule" "public_outbound" {
-  for_each = {
-    for idx, rule in local.flattened_public_outbound_acl_rules :
-    "${rule.acl_key}-${rule.rule_number}" => rule
-  }
-
-  network_acl_id  = aws_network_acl.public[each.value.acl_key].id
-  rule_number     = each.value.rule_number
-  egress          = true
-  protocol        = each.value.protocol
-  rule_action     = each.value.rule_action
-  cidr_block      = each.value.cidr_block
-  ipv6_cidr_block = each.value.ipv6_cidr_block
-  from_port       = each.value.from_port
-  to_port         = each.value.to_port
-
-  depends_on = [aws_network_acl_association.public]
-}
-
-# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-# PRIVATE NACL Resources
-# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-# Create private Network ACL
-resource "aws_network_acl" "private" {
-  for_each = toset(var.nacls_private)
-  vpc_id   = aws_vpc.vpc.id
-
-  tags = merge(local.default_tags, {
-    Name = format("%s-%s", local.namespace, local.PRV_NACL)
-  })
-
-  depends_on = [aws_subnet.private]
-
-}
-
-resource "aws_network_acl_association" "private" {
-  for_each       = toset(var.nacls_private)
-  network_acl_id = aws_network_acl.private[each.key].id
-  subnet_id      = aws_subnet.private[each.key].id
-
-  depends_on = [aws_network_acl.private]
-}
-
-
-resource "aws_network_acl_rule" "private_inbound" {
-  for_each = {
-    for idx, rule in local.flattened_private_inbound_acl_rules :
-    "${rule.acl_key}-${rule.rule_number}" => rule
-  }
-
-  network_acl_id  = aws_network_acl.private[each.value.acl_key].id
-  rule_number     = each.value.rule_number
-  egress          = false
-  protocol        = each.value.protocol
-  rule_action     = each.value.rule_action
-  cidr_block      = each.value.cidr_block
-  ipv6_cidr_block = each.value.ipv6_cidr_block
-  from_port       = each.value.from_port
-  to_port         = each.value.to_port
-
-  depends_on = [aws_network_acl_association.private]
-}
-
-resource "aws_network_acl_rule" "private_outbound" {
-  for_each = {
-    for idx, rule in local.flattened_private_outbound_acl_rules :
-    "${rule.acl_key}-${rule.rule_number}" => rule
-  }
-
-  network_acl_id  = aws_network_acl.private[each.value.acl_key].id
-  rule_number     = each.value.rule_number
-  egress          = true
-  protocol        = each.value.protocol
-  rule_action     = each.value.rule_action
-  cidr_block      = each.value.cidr_block
-  ipv6_cidr_block = each.value.ipv6_cidr_block
-  from_port       = each.value.from_port
-  to_port         = each.value.to_port
-
-  depends_on = [aws_network_acl_association.private]
-}
-
-
-# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-# DATABASE NACL Resources
-# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-# Create database Network ACL
-resource "aws_network_acl" "database" {
-  for_each = toset(var.nacls_database)
-  vpc_id   = aws_vpc.vpc.id
-
-  tags = merge(local.default_tags, {
-    Name = format("%s-%s", local.namespace, local.DB_NACL)
-  })
-
-  depends_on = [aws_subnet.database]
-
-}
-
-resource "aws_network_acl_association" "database" {
-  for_each       = toset(var.nacls_database)
-  network_acl_id = aws_network_acl.database[each.key].id
-  subnet_id      = aws_subnet.database[each.key].id
-
-  depends_on = [aws_network_acl.database]
-}
-
-
-resource "aws_network_acl_rule" "database_inbound" {
-  for_each = {
-    for idx, rule in local.flattened_database_inbound_acl_rules :
-    "${rule.acl_key}-${rule.rule_number}" => rule
-  }
-
-  network_acl_id  = aws_network_acl.database[each.value.acl_key].id
-  rule_number     = each.value.rule_number
-  egress          = false
-  protocol        = each.value.protocol
-  rule_action     = each.value.rule_action
-  cidr_block      = each.value.cidr_block
-  ipv6_cidr_block = each.value.ipv6_cidr_block
-  from_port       = each.value.from_port
-  to_port         = each.value.to_port
-
-  depends_on = [aws_network_acl_association.database]
-}
-
-resource "aws_network_acl_rule" "database_outbound" {
-  for_each = {
-    for idx, rule in local.flattened_database_outbound_acl_rules :
-    "${rule.acl_key}-${rule.rule_number}" => rule
-  }
-
-  network_acl_id  = aws_network_acl.database[each.value.acl_key].id
-  rule_number     = each.value.rule_number
-  egress          = true
-  protocol        = each.value.protocol
-  rule_action     = each.value.rule_action
-  cidr_block      = each.value.cidr_block
-  ipv6_cidr_block = each.value.ipv6_cidr_block
-  from_port       = each.value.from_port
-  to_port         = each.value.to_port
-
-  depends_on = [aws_network_acl_association.database]
+  depends_on = [module.database_subnets]
 }

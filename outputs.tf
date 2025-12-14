@@ -32,7 +32,7 @@ output "nat_gateways" {
 }
 
 
-# WARNING!!! Changing the outputs below will require changes in the dependent module
+# WARNING!!! Changing the outputs name below will require changes in the dependent module
 # Dependencies : [APPLICATION MODULE > LOCALS_CONSTANT.TF]
 output "security_groups" {
   description = "List of available Security Groups"
@@ -48,39 +48,15 @@ output "security_groups" {
 
 output "public_subnets" {
   description = "List of available public subnets"
-  value = {
-    for key, details in aws_subnet.public : key => {
-      id         = details.id
-      arn        = details.arn
-      az         = details.availability_zone
-      short_az   = upper(regex(local.REGEX_AZ_SHORT, details.availability_zone)[0])
-      cidr_block = details.cidr_block
-    }
-  }
+  value       = module.public_subnets.details
 }
 
 output "private_subnets" {
   description = "List of available private subnets"
-  value = {
-    for key, details in aws_subnet.private : key => {
-      id         = details.id
-      arn        = details.arn
-      az         = details.availability_zone
-      short_az   = upper(regex(local.REGEX_AZ_SHORT, details.availability_zone)[0])
-      cidr_block = details.cidr_block
-    }
-  }
+  value       = module.private_subnets.details
 }
 
 output "database_subnets" {
   description = "List of available database subnets"
-  value = {
-    for key, details in aws_subnet.database : key => {
-      id         = details.id
-      arn        = details.arn
-      az         = details.availability_zone
-      short_az   = upper(regex(local.REGEX_AZ_SHORT, details.availability_zone)[0])
-      cidr_block = details.cidr_block
-    }
-  }
+  value       = module.database_subnets.details
 }

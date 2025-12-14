@@ -9,5 +9,5 @@ resource "aws_vpc_endpoint" "interface" {
   subnet_ids          = each.value.subnet_ids
   security_group_ids  = each.value.security_group_ids
   private_dns_enabled = true
-  depends_on          = [aws_subnet.private, aws_security_group.this]
+  depends_on          = [aws_security_group.this]
 }

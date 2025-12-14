@@ -36,7 +36,7 @@ resource "aws_eip" "nat" {
 resource "aws_nat_gateway" "nat" {
   for_each      = toset(local.list_nat_az_keys)
   allocation_id = aws_eip.nat[each.key].id
-  subnet_id     = aws_subnet.public[format("%s1", each.key)].id # Assuming NAT is always created at the first public subnet of the AZ
+  subnet_id     = module.public_subnets[format("%s1", each.key)].id # Assuming NAT is always created at the first public subnet of the AZ
 
   tags = merge(local.default_tags, {
     Name = format("%s-%s-%s", local.namespace, local.NATGW, each.key)
@@ -45,52 +45,48 @@ resource "aws_nat_gateway" "nat" {
   depends_on = [aws_internet_gateway.igw]
 }
 
-# Create Public Subnets
-resource "aws_subnet" "public" {
-  for_each = local.map_public_subnets
+module "public_subnets" {
+  source = "./sub_modules/subnets"
 
-  vpc_id            = aws_vpc.vpc.id
-  cidr_block        = each.value.cidr
-  availability_zone = each.value.az
+  # Common Variables
+  namespace    = local.namespace
+  default_tags = local.default_tags
 
-  tags = merge(local.default_tags, {
-    Name = format("%s-%s-%s", local.namespace, local.PUB_SUB, each.key)
-  })
-
-  depends_on = [aws_internet_gateway.igw]
+  # Submodule-specific Variables
+  vpc_id      = aws_vpc.vpc.id
+  dict_azs    = local.dict_azs
+  subnet_type = local.PUB_SUB
+  subnets     = var.public_subnets
 }
 
-# Create Private Subnets
-resource "aws_subnet" "private" {
-  for_each = local.map_private_subnets
+module "private_subnets" {
+  source = "./sub_modules/subnets"
 
-  vpc_id            = aws_vpc.vpc.id
-  region            = var.region
-  cidr_block        = each.value.cidr
-  availability_zone = each.value.az
+  # Common Variables
+  namespace    = local.namespace
+  default_tags = local.default_tags
 
-  tags = merge(local.default_tags, {
-    Name = format("%s-%s-%s", local.namespace, local.PRV_SUB, each.key)
-  })
+  # Submodule-specific Variables
+  vpc_id      = aws_vpc.vpc.id
+  dict_azs    = local.dict_azs
+  subnet_type = local.PRV_SUB
+  subnets     = var.private_subnets
 
-  depends_on = [aws_vpc.vpc]
 }
 
-# Create Database Subnets
-resource "aws_subnet" "database" {
-  for_each = local.map_database_subnets
+module "database_subnets" {
+  source = "./sub_modules/subnets"
 
-  vpc_id            = aws_vpc.vpc.id
-  region            = var.region
-  cidr_block        = each.value.cidr
-  availability_zone = each.value.az
+  # Common Variables
+  namespace    = local.namespace
+  default_tags = local.default_tags
 
-  tags = merge(local.default_tags, {
-    Name = format("%s-%s-%s", local.namespace, local.DB_SUB, each.key)
-  })
+  # Submodule-specific Variables
+  vpc_id      = aws_vpc.vpc.id
+  dict_azs    = local.dict_azs
+  subnet_type = local.DB_SUB
+  subnets     = var.database_subnets
 
-  depends_on = [aws_vpc.vpc]
 }
-
 
 
