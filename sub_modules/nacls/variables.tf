@@ -18,13 +18,9 @@ variable "nacl_type" {
   type        = string
 }
 
-variable "subnets" {
-  type        = any
-  description = "List of available subnets for the specified NACL type"
-}
-
 variable "nacls" {
   type = map(object({
+    name             = optional(string)
     is_bidirectional = optional(bool, true)
     common_rules     = optional(list(string), [])
     inbound_rules = optional(list(object({

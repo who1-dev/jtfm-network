@@ -155,8 +155,38 @@ variable "security_groups" {
 # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 # START: NACL Variables ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+variable "nacls_shared" {
+  type = map(object({
+    name             = optional(string)
+    is_bidirectional = optional(bool, true)
+    common_rules     = optional(list(string), [])
+    inbound_rules = optional(list(object({
+      rule_number     = number
+      protocol        = string
+      rule_action     = string
+      cidr_block      = optional(string)
+      ipv6_cidr_block = optional(string)
+      from_port       = number
+      to_port         = number
+    })), [])
+    outbound_rules = optional(list(object({
+      rule_number     = number
+      protocol        = string
+      rule_action     = string
+      cidr_block      = optional(string)
+      ipv6_cidr_block = optional(string)
+      from_port       = number
+      to_port         = number
+    })), [])
+  }))
+  description = "Map of Public NACLs to create per subnet type"
+  default     = {}
+}
+
+
 variable "nacls_public" {
   type = map(object({
+    name             = optional(string)
     is_bidirectional = optional(bool, true)
     common_rules     = optional(list(string), [])
     inbound_rules = optional(list(object({
@@ -184,6 +214,7 @@ variable "nacls_public" {
 
 variable "nacls_private" {
   type = map(object({
+    name             = optional(string)
     is_bidirectional = optional(bool, true)
     common_rules     = optional(list(string), [])
     inbound_rules = optional(list(object({
@@ -212,6 +243,7 @@ variable "nacls_private" {
 
 variable "nacls_database" {
   type = map(object({
+    name             = optional(string)
     is_bidirectional = optional(bool, true)
     common_rules     = optional(list(string), [])
     inbound_rules = optional(list(object({

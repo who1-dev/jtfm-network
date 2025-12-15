@@ -41,20 +41,7 @@ locals {
     ]
   ])
 
-
-  # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  # VPC Endpoint Related Locals
-  # ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  flattened_vpc_endpoint_interface_services = flatten([
-    for key, details in var.interface_endpoints : [
-      for service_name in local.VPC_ENDPOINT_SERVICES[upper(key)] : {
-        key                = format("%s-%s", key, service_name)
-        service_name       = service_name
-        vpc_endpoint_type  = "Interface"
-        subnet_ids         = [for key in details.subnet_keys : module.private_subnets[key].id]
-        security_group_ids = [for key in details.security_group_keys : aws_security_group.this[key].id]
-      }
-    ]
-  ])
-
 }
+
+
+

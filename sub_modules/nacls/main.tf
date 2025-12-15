@@ -82,16 +82,8 @@ resource "aws_network_acl" "this" {
   vpc_id   = var.vpc_id
 
   tags = merge(var.default_tags, {
-    Name = format("%s-%s", var.namespace, var.nacl_type)
+    Name = format("%s-%s", var.namespace, var.nacls[each.key].name == null ? var.nacl_type : upper(var.nacls[each.key].name))
   })
-}
-
-resource "aws_network_acl_association" "this" {
-  for_each       = toset(local.nacl_keys)
-  network_acl_id = aws_network_acl.this[each.key].id
-  subnet_id      = var.subnets[each.key].id
-
-  depends_on = [aws_network_acl.this]
 }
 
 
@@ -111,7 +103,7 @@ resource "aws_network_acl_rule" "inbound" {
   from_port       = each.value.from_port
   to_port         = each.value.to_port
 
-  depends_on = [aws_network_acl_association.this]
+  depends_on = [aws_network_acl.this]
 }
 
 resource "aws_network_acl_rule" "outbound" {
@@ -130,5 +122,5 @@ resource "aws_network_acl_rule" "outbound" {
   from_port       = each.value.from_port
   to_port         = each.value.to_port
 
-  depends_on = [aws_network_acl_association.this]
+  depends_on = [aws_network_acl.this]
 }

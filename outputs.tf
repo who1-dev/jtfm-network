@@ -48,15 +48,20 @@ output "security_groups" {
 
 output "public_subnets" {
   description = "List of available public subnets"
-  value       = module.public_subnets.details
+  value       = try(module.subnets[local.PUBLIC].details, {})
 }
 
 output "private_subnets" {
   description = "List of available private subnets"
-  value       = module.private_subnets.details
+  value       = try(module.subnets[local.PRIVATE].details, {})
 }
 
 output "database_subnets" {
   description = "List of available database subnets"
-  value       = module.database_subnets.details
+  value       = try(module.subnets[local.DATABASE].details, {})
+}
+
+output "nacls" {
+  description = "List of available Network ACLs"
+  value       = { for k, v in module.nacls : k => v.details }
 }

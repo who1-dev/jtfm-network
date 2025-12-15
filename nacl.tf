@@ -1,20 +1,30 @@
-module "public_nacls" {
-  source = "./sub_modules/nacls"
-
-  # Common Variables
-  namespace    = local.namespace
-  default_tags = local.default_tags
-  vpc_id       = aws_vpc.vpc.id
-
-  # Submodule-specific Variables
-  nacl_type = local.PUB_NACL
-  subnets   = module.public_subnets.details
-  nacls     = var.nacls_public
-
-  depends_on = [module.public_subnets]
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+# NACLS
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+locals {
+  map_nacls = {
+    for key, value in {
+      (local.SHARED) = {
+        type  = local.SHARED_NACL
+        nacls = var.nacls_shared
+      }
+      (local.PUBLIC) = {
+        type  = local.PUB_NACL
+        nacls = var.nacls_public
+      }
+      (local.PRIVATE) = {
+        type  = local.PRV_NACL
+        nacls = var.nacls_private
+      }
+      (local.DATABASE) = {
+        type  = local.DB_NACL
+        nacls = var.nacls_database
+      }
+    } : key => value if length(value.nacls) > 0
+  }
 }
 
-module "private_nacls" {
+module "nacls" {
   source = "./sub_modules/nacls"
 
   # Common Variables
@@ -22,26 +32,11 @@ module "private_nacls" {
   default_tags = local.default_tags
   vpc_id       = aws_vpc.vpc.id
 
-  # Submodule-specific Variables
-  nacl_type = local.PRV_NACL
-  subnets   = module.private_subnets.details
-  nacls     = var.nacls_private
-
-  depends_on = [module.private_subnets]
-}
-
-module "database_nacls" {
-  source = "./sub_modules/nacls"
-
-  # Common Variables
-  namespace    = local.namespace
-  default_tags = local.default_tags
-  vpc_id       = aws_vpc.vpc.id
 
   # Submodule-specific Variables
-  nacl_type = local.DB_NACL
-  subnets   = module.database_subnets.details
-  nacls     = var.nacls_database
+  for_each  = local.map_nacls
+  nacl_type = each.value.type
+  nacls     = each.value.nacls
 
-  depends_on = [module.database_subnets]
+  depends_on = [module.subnets]
 }

@@ -36,57 +36,49 @@ resource "aws_eip" "nat" {
 resource "aws_nat_gateway" "nat" {
   for_each      = toset(local.list_nat_az_keys)
   allocation_id = aws_eip.nat[each.key].id
-  subnet_id     = module.public_subnets[format("%s1", each.key)].id # Assuming NAT is always created at the first public subnet of the AZ
+  subnet_id     = module.subnets.public.details[format("%s1", each.key)].id # Assuming NAT is always created at the first public subnet of the AZ
 
   tags = merge(local.default_tags, {
     Name = format("%s-%s-%s", local.namespace, local.NATGW, each.key)
   })
 
-  depends_on = [aws_internet_gateway.igw]
+  depends_on = [aws_internet_gateway.igw, module.subnets]
 }
 
-module "public_subnets" {
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+# SUBNETS 
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+locals {
+  map_subnets = {
+    for key, value in {
+      (local.PUBLIC) = {
+        type    = local.PUB_SUB
+        subnets = var.public_subnets
+      }
+      (local.PRIVATE) = {
+        type    = local.PRV_SUB
+        subnets = var.private_subnets
+      }
+      (local.DATABASE) = {
+        type    = local.DB_SUB
+        subnets = var.database_subnets
+      }
+    } : key => value if length(value.subnets) > 0
+  }
+}
+
+module "subnets" {
   source = "./sub_modules/subnets"
 
   # Common Variables
   namespace    = local.namespace
   default_tags = local.default_tags
+  vpc_id       = aws_vpc.vpc.id
+  dict_azs     = local.dict_azs
 
   # Submodule-specific Variables
-  vpc_id      = aws_vpc.vpc.id
-  dict_azs    = local.dict_azs
-  subnet_type = local.PUB_SUB
-  subnets     = var.public_subnets
+  for_each    = local.map_subnets
+  subnet_type = each.value.type
+  subnets     = each.value.subnets
 }
-
-module "private_subnets" {
-  source = "./sub_modules/subnets"
-
-  # Common Variables
-  namespace    = local.namespace
-  default_tags = local.default_tags
-
-  # Submodule-specific Variables
-  vpc_id      = aws_vpc.vpc.id
-  dict_azs    = local.dict_azs
-  subnet_type = local.PRV_SUB
-  subnets     = var.private_subnets
-
-}
-
-module "database_subnets" {
-  source = "./sub_modules/subnets"
-
-  # Common Variables
-  namespace    = local.namespace
-  default_tags = local.default_tags
-
-  # Submodule-specific Variables
-  vpc_id      = aws_vpc.vpc.id
-  dict_azs    = local.dict_azs
-  subnet_type = local.DB_SUB
-  subnets     = var.database_subnets
-
-}
-
-
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
