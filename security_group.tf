@@ -1,3 +1,23 @@
+locals {
+  # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  # Security Group
+  # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  flattened_security_group_ingress_rules = flatten([
+    for key, details in var.security_groups : [
+      for idx, rule in details.rules : {
+        key                           = key
+        ing_key                       = format("%s-%d", key, idx + 1)
+        referenced_security_group_key = lookup(rule, "referenced_security_group_key", null)
+        ip_protocol                   = lookup(rule, "ip_protocol", "tcp")
+        port                          = rule.port
+        cidr_block                    = rule.cidr_block
+        description                   = lookup(rule, "description", null)
+      }
+    ]
+  ])
+}
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
 resource "aws_security_group" "this" {
   for_each    = var.security_groups
   name        = each.value.name

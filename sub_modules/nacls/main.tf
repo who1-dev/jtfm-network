@@ -1,5 +1,4 @@
 locals {
-  nacl_keys = keys(var.nacls)
   nacl_rules_normalized = {
     for subnet_key, config in var.nacls : subnet_key => {
 
@@ -78,7 +77,7 @@ locals {
 
 
 resource "aws_network_acl" "this" {
-  for_each = toset(local.nacl_keys)
+  for_each = toset(keys(var.nacls))
   vpc_id   = var.vpc_id
 
   tags = merge(var.default_tags, {

@@ -46,6 +46,11 @@ output "security_groups" {
   }
 }
 
+output "active_azs" {
+  description = "List of Network Tiers(Public, Private, Database) and its active az location"
+  value       = { for tier, details in local.map_subnets : tier => details.active_azs }
+}
+
 output "public_subnets" {
   description = "List of available public subnets"
   value       = try(module.subnets[local.PUBLIC].details, {})

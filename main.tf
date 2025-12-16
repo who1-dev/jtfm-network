@@ -48,25 +48,6 @@ resource "aws_nat_gateway" "nat" {
 # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 # SUBNETS 
 # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-locals {
-  map_subnets = {
-    for key, value in {
-      (local.PUBLIC) = {
-        type    = local.PUB_SUB
-        subnets = var.public_subnets
-      }
-      (local.PRIVATE) = {
-        type    = local.PRV_SUB
-        subnets = var.private_subnets
-      }
-      (local.DATABASE) = {
-        type    = local.DB_SUB
-        subnets = var.database_subnets
-      }
-    } : key => value if length(value.subnets) > 0
-  }
-}
-
 module "subnets" {
   source = "./sub_modules/subnets"
 

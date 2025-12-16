@@ -14,7 +14,7 @@ locals {
     ]
   ])
 }
-
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 #Create a VPC Endpoint for specified Interface Services
 resource "aws_vpc_endpoint" "interface" {
   for_each = {
