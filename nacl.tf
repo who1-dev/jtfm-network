@@ -2,11 +2,20 @@
 # NACLS
 # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 locals {
+
+  // Quarantine NACL should always be created.
+  nacls_shared = merge(var.nacls_shared, {
+    "QUARANTINE" = {
+      name             = "QUARANTINE-NACL"
+      is_bidirectional = false
+    }
+  })
+
   map_nacls = {
     for key, value in {
       (local.SHARED) = {
         type  = local.SHARED_NACL
-        nacls = var.nacls_shared
+        nacls = local.nacls_shared
       }
       (local.PUBLIC) = {
         type  = local.PUB_NACL

@@ -20,6 +20,10 @@ locals {
   DB_NACL     = "DB-NACL"
   SHARED_NACL = "SHARED-NACL"
 
+
+  # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  # WARNING!!! : Changing values below will force recreation of SUBNET at NACL associations
+  # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   #Resource Keys
   SHARED   = "shared"
   PUBLIC   = "public"
