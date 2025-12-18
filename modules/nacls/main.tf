@@ -80,7 +80,7 @@ resource "aws_network_acl" "this" {
   vpc_id   = var.vpc_id
 
   tags = merge(var.default_tags, {
-    Name = format("%s-%s", var.namespace, var.nacls[each.key].name == null ? var.nacl_type : upper(var.nacls[each.key].name))
+    Name = format("%s-%s", var.namespace, var.nacls[each.key].name == null ? format("%s-%s", var.nacl_type, each.key) : upper(var.nacls[each.key].name))
   })
 }
 
