@@ -27,5 +27,10 @@ resource "aws_vpc_endpoint" "interface" {
   security_group_ids  = each.value.security_group_ids
   private_dns_enabled = true
 
+  tags = merge(local.default_tags, {
+    Name = format("%s-%s", local.namespace, each.key)
+  })
+
+
   depends_on = [aws_security_group.this, module.subnets]
 }
