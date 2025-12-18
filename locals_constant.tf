@@ -22,7 +22,7 @@ locals {
 
 
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  # WARNING!!! : Changing values below will force recreation of SUBNET at NACL associations
+  # WARNING!!! : Changing values below will force recreation of SUBNET and NACL associations
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   #Resource Keys
   SHARED   = "shared"

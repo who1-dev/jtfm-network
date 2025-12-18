@@ -45,16 +45,16 @@ output "security_groups" {
 }
 
 output "active_azs" {
-  description = "List of Network Tiers(Public, Private, Database) and its active az location"
+  description = "Map of Network Tiers(Public, Private, Database) and its active az location"
   value       = { for tier, details in local.map_subnets : tier => details.active_azs }
 }
 
 output "subnets" {
-  description = "List of available Subnets by tier (PUB|PRV|DB)"
+  description = "Map of available Subnets by tier (PUB|PRV|DB)"
   value       = { for k, v in module.subnets : k => v.details }
 }
 
 output "nacls" {
-  description = "List of available Network ACLs by Tier (PUB|PRV|DB|SHARED)"
+  description = "Map of available Network ACLs by Tier (PUB|PRV|DB|SHARED)"
   value       = { for k, v in module.nacls : k => v.details }
 }

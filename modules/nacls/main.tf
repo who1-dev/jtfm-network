@@ -40,10 +40,10 @@ locals {
     for subnet_key, data in local.nacl_rules_normalized : [
       for idx, rule in data.inbound : {
         # Create a unique key for for_each (e.g., "1B1-100")
-        key = "${subnet_key}-${try(rule.rule_number, idx * 10 + 100)}"
+        key = "${subnet_key}-IN-${rule.rule_number}"
 
         nacl_key        = subnet_key
-        rule_number     = try(rule.rule_number, idx * 10 + 100) # Auto-number if missing
+        rule_number     = rule.rule_number
         protocol        = rule.protocol
         rule_action     = rule.rule_action
         cidr_block      = try(rule.cidr_block, null)
@@ -59,10 +59,10 @@ locals {
   flattened_outbound_acl_rules = flatten([
     for subnet_key, data in local.nacl_rules_normalized : [
       for idx, rule in data.outbound : {
-        key = "${subnet_key}-${try(rule.rule_number, idx * 10 + 100)}"
+        key = "${subnet_key}-OUT-${rule.rule_number}"
 
         nacl_key        = subnet_key
-        rule_number     = try(rule.rule_number, idx * 10 + 100)
+        rule_number     = rule.rule_number
         protocol        = rule.protocol
         rule_action     = rule.rule_action
         cidr_block      = try(rule.cidr_block, null)
@@ -75,7 +75,6 @@ locals {
   ])
 }
 
-
 resource "aws_network_acl" "this" {
   for_each = toset(keys(var.nacls))
   vpc_id   = var.vpc_id
@@ -85,41 +84,24 @@ resource "aws_network_acl" "this" {
   })
 }
 
-
-resource "aws_network_acl_rule" "inbound" {
-  for_each = {
-    for idx, rule in local.flattened_inbound_acl_rules :
-    rule.key => rule
+resource "aws_network_acl_rule" "rules" {
+  for_each = { 
+    for r in concat(local.flattened_inbound_acl_rules, local.flattened_outbound_acl_rules) : r.key => r 
   }
 
-  network_acl_id  = aws_network_acl.this[each.value.nacl_key].id
-  rule_number     = each.value.rule_number
-  egress          = false
-  protocol        = each.value.protocol
-  rule_action     = each.value.rule_action
-  cidr_block      = each.value.cidr_block
-  ipv6_cidr_block = each.value.ipv6_cidr_block
-  from_port       = each.value.from_port
-  to_port         = each.value.to_port
+  network_acl_id = aws_network_acl.this[each.value.nacl_key].id
+  
+  rule_number    = each.value.rule_number
+  egress         = each.value.egress      
+  protocol       = each.value.protocol
+  rule_action    = each.value.rule_action
+  cidr_block     = each.value.cidr_block
+  from_port      = each.value.from_port
+  to_port        = each.value.to_port
 
-  depends_on = [aws_network_acl.this]
-}
-
-resource "aws_network_acl_rule" "outbound" {
-  for_each = {
-    for rule in local.flattened_outbound_acl_rules :
-    rule.key => rule
+  lifecycle {
+    create_before_destroy = false
   }
 
-  network_acl_id  = aws_network_acl.this[each.value.nacl_key].id
-  rule_number     = each.value.rule_number
-  egress          = true
-  protocol        = each.value.protocol
-  rule_action     = each.value.rule_action
-  cidr_block      = each.value.cidr_block
-  ipv6_cidr_block = each.value.ipv6_cidr_block
-  from_port       = each.value.from_port
-  to_port         = each.value.to_port
-
-  depends_on = [aws_network_acl.this]
+  depends_on = [ aws_network_acl.this ]
 }

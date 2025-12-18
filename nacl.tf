@@ -34,7 +34,7 @@ locals {
 }
 
 module "nacls" {
-  source = "./sub_modules/nacls"
+  source = "./modules/nacls"
 
   # Common Variables
   namespace    = local.namespace

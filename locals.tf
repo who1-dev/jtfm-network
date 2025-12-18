@@ -11,28 +11,23 @@ locals {
     { for az in local.sorted_azs : upper(regex(local.REGEX_AZ_SHORT, az)[0]) => az }
   )
 
+
+  subnet_inputs = {
+    (local.PUBLIC)   = var.public_subnets
+    (local.PRIVATE)  = var.private_subnets
+    (local.DATABASE) = var.database_subnets
+  }
+
   # Builds the mapper for subnet creation and identifies the active_azs
   # active_az : (AZ's with CIDRs)
   map_subnets = {
-    for key, value in {
-      (local.PUBLIC) = {
-        type       = local.PUB_SUB
-        subnets    = var.public_subnets
-        active_azs = [for az, cidrs in var.public_subnets : local.dict_azs[az] if length(cidrs) > 0]
-      }
-      (local.PRIVATE) = {
-        type       = local.PRV_SUB
-        subnets    = var.private_subnets
-        active_azs = [for az, cidrs in var.private_subnets : local.dict_azs[az] if length(cidrs) > 0]
-      }
-      (local.DATABASE) = {
-        type       = local.DB_SUB
-        subnets    = var.database_subnets
-        active_azs = [for az, cidrs in var.database_subnets : local.dict_azs[az] if length(cidrs) > 0]
-      }
-    } : key => value if length(value.active_azs) > 0
+    for tier, sub_map in local.subnet_inputs : tier => {
+      type       = tier
+      subnets    = sub_map
+      active_azs = [for az, cidrs in sub_map : local.dict_azs[az] if length(cidrs) > 0]
+    }
+    if length(sub_map) > 0 # Only include if the variable isn't empty
   }
-
 
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   # NAT Gateway Related Locals

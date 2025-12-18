@@ -8,7 +8,7 @@ locals {
         key                = format("%s-%s", key, service_name)
         service_name       = service_name
         vpc_endpoint_type  = "Interface"
-        subnet_ids         = [for key in details.subnet_keys : module.subnets.private.details[key].id]
+        subnet_ids         = [for key in details.subnet_keys : module.subnets[local.PRIVATE].details[key].id]
         security_group_ids = [for key in details.security_group_keys : aws_security_group.this[key].id]
       }
     ]

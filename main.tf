@@ -49,7 +49,7 @@ resource "aws_nat_gateway" "nat" {
 # SUBNETS 
 # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 module "subnets" {
-  source = "./sub_modules/subnets"
+  source = "./modules/subnets"
 
   # Common Variables
   namespace    = local.namespace
@@ -59,7 +59,7 @@ module "subnets" {
 
   # Submodule-specific Variables
   for_each    = local.map_subnets
-  subnet_type = each.value.type
+  subnet_type = upper(each.value.type)
   subnets     = each.value.subnets
 }
 # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
