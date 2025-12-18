@@ -15,7 +15,7 @@ variable "vpc_id" {
 
 variable "dict_azs" {
   type        = any
-  description = "List of availability zones to use"
+  description = "Dictionary of AZs specified at parent mddule: { {us-east-1a : 1A}, { 1A: us-east-1a } }	"
 }
 
 variable "subnet_type" {
@@ -25,5 +25,5 @@ variable "subnet_type" {
 
 variable "subnets" {
   type        = map(list(string))
-  description = "List of subnets CIDRs per AZ"
+  description = "Map of subnets CIDRs per AZ"
 }

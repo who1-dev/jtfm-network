@@ -1,7 +1,6 @@
 variable "env" {
   type        = string
   description = "Deployment environment (e.g., dev, prod)"
-  default     = "dev"
 }
 
 variable "namespace" {
@@ -12,7 +11,11 @@ variable "namespace" {
 variable "region" {
   type        = string
   description = "AWS region to deploy resources"
-  default     = "us-east-1"
+}
+
+variable "default_tags" {
+  type        = map(any)
+  description = "Default tags to be applied to all AWS resources"
 }
 
 # START: VPC Specific details ─────────────────────────────
@@ -40,20 +43,15 @@ variable "enable_dns_hostnames" {
 
 variable "azs" {
   type        = list(string)
-  description = "List of Availability zones to be used in the VPC"
+  description = "A list of AWS Availability Zones (e.g., us-east-1a) to distribute subnets across."
 }
 # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-
-
-
-
 
 
 # START: NAT Gateway related Variables ──────────────────────────────────────────────────────────────────────────────────────────────────────────────-
 variable "enable_nat_gateway" {
   type        = bool
-  description = "Enable NAT Gateway for private subnets"
+  description = "Toggle to create NAT Gateways. Requires at least one entry in public_subnets"
   default     = false
   validation {
     condition     = !var.enable_nat_gateway || length(var.public_subnets) > 0
@@ -63,13 +61,13 @@ variable "enable_nat_gateway" {
 
 variable "deploy_nat_in_all_public_azs" {
   type        = bool
-  description = "Deploy NAT Gateways in all public subnet AZs if true, else use set_nat_deployment_az_location"
+  description = "If true, scales NAT Gateways to every AZ for high availability."
   default     = true
 }
 
 variable "set_nat_deployment_az_location" {
   type        = list(string)
-  description = "A list of Availability Zones to deploy NAT Gateways in. Must be a subset of var.azs."
+  description = "Manual override to pick specific AZs for NAT placement (must match entries in var.azs)."
   default     = []
   validation {
     # Check if all elements in set_nat_az_location are present in var.azs
@@ -87,7 +85,7 @@ variable "interface_endpoints" {
     subnet_keys         = list(string)
     security_group_keys = list(string)
   }))
-  description = "Map of Interface VPC Endpoints"
+  description = "Configuration for PrivateLink VPC Endpoints, mapping specific subnets and security groups to the service."
   default     = {}
 }
 # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -99,7 +97,7 @@ variable "interface_endpoints" {
 
 variable "public_subnets" {
   type        = map(list(string))
-  description = "List of public subnet CIDRs per AZ"
+  description = "Map of AZ keys to CIDR lists for public subnets"
   default     = {}
   validation {
     condition = alltrue([
@@ -112,7 +110,7 @@ variable "public_subnets" {
 
 variable "private_subnets" {
   type        = map(list(string))
-  description = "List of private subnet CIDRs per AZ"
+  description = "Map of AZ keys to CIDR lists for private subnets"
   default     = {}
   validation {
     condition = alltrue([
@@ -124,7 +122,7 @@ variable "private_subnets" {
 
 variable "database_subnets" {
   type        = map(list(string))
-  description = "List of database subnet CIDRs per AZ"
+  description = "Map of AZ keys to CIDR lists for database subnets"
   default     = {}
   validation {
     condition = alltrue([
@@ -149,7 +147,7 @@ variable "security_groups" {
       ip_protocol                   = optional(string, "tcp")
     }))
   }))
-  description = "Map of security groups"
+  description = "Definitions for stateful firewalls, including ingress/egress rules and source-group referencing."
   default     = {}
 }
 # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -179,7 +177,7 @@ variable "nacls_shared" {
       to_port         = number
     })), [])
   }))
-  description = "Map of Public NACLs to create per subnet type"
+  description = "Common stateless network ACL rules intended for reuse across multiple subnet types."
   default     = {}
 }
 
@@ -208,7 +206,7 @@ variable "nacls_public" {
       to_port         = number
     })), [])
   }))
-  description = "Map of Public NACLs to create per subnet type"
+  description = "Map of Stateless firewall rules applied specifically to public subnet boundaries."
   default     = {}
 }
 
@@ -236,7 +234,7 @@ variable "nacls_private" {
       to_port         = number
     })), [])
   }))
-  description = "Map of Private NACLs to create per subnet type"
+  description = "Map of Stateless firewall rules applied specifically to private subnet boundaries."
   default     = {}
 
 }
@@ -265,7 +263,7 @@ variable "nacls_database" {
       to_port         = number
     })), [])
   }))
-  description = "Map of Database NACLs to create per subnet type"
+  description = "Map of Stateless firewall rules applied specifically to database subnet boundaries."
   default     = {}
 
 }

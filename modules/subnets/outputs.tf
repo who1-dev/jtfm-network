@@ -3,7 +3,7 @@ locals {
 }
 
 output "details" {
-  description = "List of available subnets"
+  description = "Map of available subnets"
   value = {
     for key, details in aws_subnet.this : key => {
       id         = details.id

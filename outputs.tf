@@ -8,6 +8,10 @@ output "vpc" {
   }
 }
 
+output "active_azs" {
+  description = "Map of Network Tiers(Public, Private, Database) and its active az location"
+  value       = { for tier, details in local.map_subnets : tier => details.active_azs }
+}
 
 output "igw_id" {
   description = "IGW ID"
@@ -42,11 +46,6 @@ output "security_groups" {
       description = details.description
     }
   }
-}
-
-output "active_azs" {
-  description = "Map of Network Tiers(Public, Private, Database) and its active az location"
-  value       = { for tier, details in local.map_subnets : tier => details.active_azs }
 }
 
 output "subnets" {

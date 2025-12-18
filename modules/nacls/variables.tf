@@ -10,11 +10,11 @@ variable "default_tags" {
 
 variable "vpc_id" {
   type        = string
-  description = "The ID of the VPC where subnets will be created"
+  description = "The ID of the VPC where nacls will be created"
 }
 
 variable "nacl_type" {
-  description = "Type of subnet (public, private, or database)"
+  description = "Type of nacls (shared, public, private, or database)"
   type        = string
 }
 
@@ -42,6 +42,6 @@ variable "nacls" {
       to_port         = number
     })), [])
   }))
-  description = "Map of Public NACLs to create per subnet type"
+  description = "Map of NACLs to create per subnet type"
   default     = {}
 }

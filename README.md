@@ -6,24 +6,27 @@ This Terraform module creates and manages a comprehensive AWS networking setup. 
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | 6.23.0 |
+| <a name="requirement_aws"></a> [aws](#provider\_aws) | ~> 6.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.23.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 6.0 |
 
 ## Modules
 
-No modules.
+| Name | Source | Version |
+|------|--------|---------|
+| <a name="module_nacls"></a> [nacls](#module\_nacls) | ./modules/nacls | n/a |
+| <a name="module_subnets"></a> [subnets](#module\_subnets) | ./modules/subnets | n/a |
 
 # Features
 
 Based on the file structure, this module manages:
 
 * **3-Tier VPC Architecture**
-    * Automatically provisions **Public**, **Private**, and **Database** subnet layers across multiple Availability Zones.
+    * Automatically provisions `Public`, `Private`, and `Database` subnet layers across multiple Availability Zones.
     * Implements a structured naming convention (e.g., `1A1`, `1B1`) to easily identify Region/AZ/Subnet hierarchy.
     * Configurable DNS support and Hostname settings.
 
@@ -32,16 +35,17 @@ Based on the file structure, this module manages:
     * Managed Elastic IP allocation for NAT resources.
 
 * **Advanced Network ACLs (Stateless Security)**
-    * **Automated Bidirectional Logic:** Optional flags (`nacl_enable_*_bidirectional_rule`) to automatically mirror inbound rules to outbound traffic, reducing configuration overhead.
-    * **Common Rule Presets:** fast-track configuration by applying common protocol sets (e.g., `["HTTP", "HTTPS"]`) across specific network layers via `nacl_*_common_rules`.
+    * **Automated Bidirectional Logic:** Optional flags (`is_bidirectional`) to automatically mirror inbound rules to outbound traffic, reducing configuration overhead.
+    * **Common Rule Presets:** fast-track configuration by applying common protocol sets (e.g., `["HTTP", "HTTPS"]`) across specific network layers via `common_rules`.
     * **Granular Rule Maps:** Full control over Inbound and Outbound rules with support for specific rule numbers, protocols, and CIDR targets.
 
 * **Security Groups (Stateful Firewalls)**
     * Simplified creation and association of Security Groups.
-    * Supports dynamic ingress rule injection and Security Group chaining (referencing other SGs by key).
+    * Supports dynamic ingress rule injection and `Security Group chaining (referencing other SGs by key)`.
 
 * **Private Service Access**
-    * Integrated configuration for **Interface VPC Endpoints** (PrivateLink).
+    * Integrated configuration for `Interface VPC Endpoints (PrivateLink)`.
+    * Simplified implementation using available endpoints [`'SSM'`, `SECRETSMANAGER`, `ECS`, `ECR` ]
     * Securely connects subnets to AWS services without traversing the public internet.
 
 ## Resources
@@ -56,21 +60,12 @@ Based on the file structure, this module manages:
 | [aws_eip.nat](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eip) | resource |
 | [aws_nat_gateway.nat](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/nat_gateway) | resource |
 
-> ### Network Access Control : Lists | Associations | Rules (Inbound, Outbound)
+
+> ### Sub-Module Resources 
 | Name | Type |
 |------|------|
-| [aws_network_acl.public](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_acl) | resource |
-| [aws_network_acl.private](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_acl) | resource |
-| [aws_network_acl.database](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_acl) | resource |
-| [aws_network_acl_association.public](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_acl_association) | resource |
-| [aws_network_acl_association.private](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_acl_association) | resource |
-| [aws_network_acl_association.database](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_acl_association) | resource |
-| [aws_network_acl_rule.public_inbound](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_acl_rule) | resource |
-| [aws_network_acl_rule.public_outbound](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_acl_rule) | resource |
-| [aws_network_acl_rule.private_inbound](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_acl_rule) | resource |
-| [aws_network_acl_rule.private_outbound](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_acl_rule) | resource |
-| [aws_network_acl_rule.database_inbound](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_acl_rule) | resource |
-| [aws_network_acl_rule.database_outbound](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_acl_rule) | resource |
+| [module.subnets](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/subnet) | resource |
+| [module.nacls](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_acl) | resource |
 
 > ### Security Groups
 | Name | Type |
@@ -93,9 +88,10 @@ Based on the file structure, this module manages:
 > ### Core
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_env"></a> [env](#input\_env) | Deployment environment (e.g., dev, prod) | `string` | `"dev"` | no |
-| <a name="input_namespace"></a> [namespace](#input\_namespace) | Project namespace | `string` | `jc` | yes |
-| <a name="input_region"></a> [region](#input\_region) | AWS region to deploy resources | `string` | `"us-east-1"` | no |
+| <a name="input_env"></a> [env](#input\_env) | Deployment environment (e.g., dev, prod) | `string` | n/a | yes |
+| <a name="input_namespace"></a> [namespace](#input\_namespace) | Project namespace | `string` | n/a | yes |
+| <a name="input_region"></a> [region](#input\_region) | AWS region to deploy resources | `string` | n/a | yes |
+| <a name="input_default_tags"></a> [default\_tags](#input\_default\_tags) | Default tags to be applied to all AWS resources | `map(any)` | n/a | yes |
 > ### VPC
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
@@ -120,48 +116,23 @@ Based on the file structure, this module manages:
 > ### Subnets
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_public_subnets"></a> [public\_subnets](#input\_public\_subnets) | List of public subnet CIDRs per AZ | `map(list(string))` | `{}` | no |
-| <a name="input_private_subnets"></a> [private\_subnets](#input\_private\_subnets) | List of private subnet CIDRs per AZ | `map(list(string))` | `{}` | no |
-| <a name="input_database_subnets"></a> [database\_subnets](#input\_database\_subnets) | List of database subnet CIDRs per AZ | `map(list(string))` | `{}` | no |
+| <a name="input_public_subnets"></a> [public\_subnets](#input\_public\_subnets) | Map of AZ keys to CIDR lists for public subnets | `map(list(string))` | `{}` | no |
+| <a name="input_private_subnets"></a> [private\_subnets](#input\_private\_subnets) | Map of AZ keys to CIDR lists for private subnets | `map(list(string))` | `{}` | no |
+| <a name="input_database_subnets"></a> [database\_subnets](#input\_database\_subnets) | Map of AZ keys to CIDR lists for database subnets | `map(list(string))` | `{}` | no |
+
 > ### Security Groups
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_security_groups"></a> [security\_groups](#input\_security\_groups) | Map of security groups | <pre>map(object({<br/>    name        = string<br/>    description = string<br/>    rules = list(object({<br/>      port                          = number<br/>      cidr_block                    = optional(string)<br/>      referenced_security_group_key = optional(string, null)<br/>      ip_protocol                   = optional(string, "tcp")<br/>    }))<br/>  }))</pre> | `{}` | no |
-> ### Network Access Control List
 
->> ### NACL Location
+> ### Network Access Control Lists
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_nacls_public"></a> [nacls\_public](#input\_nacls\_public) | List of Public Subnets to have an NACL | `list(string)` | `[]` | no |
-| <a name="input_nacls_private"></a> [nacls\_private](#input\_nacls\_private) | List of Private Subnets to have an NACL | `list(string)` | `[]` | no |
-| <a name="input_nacls_database"></a> [nacls\_database](#input\_nacls\_database) | List of Database Subnets to have an NACL | `list(string)` | `[]` | no |
->> ### NACL Common Rules
->>>### Rules Available: ["HTTP", "HTTPS"]
->>>### Notes: Declaring a value here will only apply if the NACL key was specified in nacl_< public|private|database >_inbound_rules
->>>### Example: <pre> nacl_public_common_rules = ["HTTP","HTTPS"] <br/> nacl_database_inbound_rules = { <br/>   "1A1" = [] <br/> } </pre>
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_nacl_public_common_rules"></a> [nacl\_public\_common\_rules](#input\_nacl\_public\_common\_rules) | Implement common rules across all public NACLs | `list(string)` | `[]` | no |
-| <a name="input_nacl_private_common_rules"></a> [nacl\_private\_common\_rules](#input\_nacl\_private\_common\_rules) | Implement common rules across all private NACLs | `list(string)` | `[]` | no |
-| <a name="input_nacl_database_common_rules"></a> [nacl\_database\_common\_rules](#input\_nacl\_database\_common\_rules) | Implement common rules across all database NACLs | `list(string)` | `[]` | no |
->> ### NACL Bidirectional Rule
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_nacl_enable_public_bidirectional_rule"></a> [nacl\_enable\_public\_bidirectional\_rule](#input\_nacl\_enable\_public\_bidirectional\_rule) | Enabling this flag automaticly applies inbound rules to outbound | `bool` | `true` | no |
-| <a name="input_nacl_enable_private_bidirectional_rule"></a> [nacl\_enable\_private\_bidirectional\_rule](#input\_nacl\_enable\_private\_bidirectional\_rule) | Enabling this flag automaticly applies inbound rules to outbound | `bool` | `true` | no |
-| <a name="input_nacl_enable_database_bidirectional_rule"></a> [nacl\_enable\_database\_bidirectional\_rule](#input\_nacl\_enable\_database\_bidirectional\_rule) | Enabling this flag automaticly applies inbound rules to outbound | `bool` | `true` | no |
->> ### NACL Inbound Rules
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_nacl_public_inbound_rules"></a> [nacl\_public\_inbound\_rules](#input\_nacl\_public\_inbound\_rules) | Inbound NACL rules for Public Subnets NACLs with port range | <pre>map(list(object({<br/>    rule_number     = number<br/>    protocol        = string<br/>    rule_action     = string<br/>    cidr_block      = optional(string)<br/>    ipv6_cidr_block = optional(string)<br/>    from_port       = number<br/>    to_port         = number<br/>  })))</pre> | `{}` | no |
-| <a name="input_nacl_private_inbound_rules"></a> [nacl\_private\_inbound\_rules](#input\_nacl\_private\_inbound\_rules) | Inbound NACL rules for Public Subnets NACLs with port range | <pre>map(list(object({<br/>    rule_number     = number<br/>    protocol        = string<br/>    rule_action     = string<br/>    cidr_block      = optional(string)<br/>    ipv6_cidr_block = optional(string)<br/>    from_port       = number<br/>    to_port         = number<br/>  })))</pre> | `{}` | no |
-| <a name="input_nacl_database_inbound_rules"></a> [nacl\_database\_inbound\_rules](#input\_nacl\_database\_inbound\_rules) | Inbound NACL rules for Database Subnets NACLs with port range | <pre>map(list(object({<br/>    rule_number     = number<br/>    protocol        = string<br/>    rule_action     = string<br/>    cidr_block      = optional(string)<br/>    ipv6_cidr_block = optional(string)<br/>    from_port       = number<br/>    to_port         = number<br/>  })))</pre> | `{}` | no |
->> ### NACL Outbound Rules
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_nacl_public_outbound_rules"></a> [nacl\_public\_outbound\_rules](#input\_nacl\_public\_outbound\_rules) | Outbound NACL rules for Public Subnets NACLs with port range | <pre>map(list(object({<br/>    rule_number     = number<br/>    protocol        = string<br/>    rule_action     = string<br/>    cidr_block      = optional(string)<br/>    ipv6_cidr_block = optional(string)<br/>    from_port       = number<br/>    to_port         = number<br/>  })))</pre> | `{}` | no |
-| <a name="input_nacl_private_outbound_rules"></a> [nacl\_private\_outbound\_rules](#input\_nacl\_private\_outbound\_rules) | Outbound NACL rules for Public Subnets NACLs with port range | <pre>map(list(object({<br/>    rule_number     = number<br/>    protocol        = string<br/>    rule_action     = string<br/>    cidr_block      = optional(string)<br/>    ipv6_cidr_block = optional(string)<br/>    from_port       = number<br/>    to_port         = number<br/>  })))</pre> | `{}` | no |
-| <a name="input_nacl_database_outbound_rules"></a> [nacl\_database\_outbound\_rules](#input\_nacl\_database\_outbound\_rules) | Outbound NACL rules for Database Subnets NACLs with port range | <pre>map(list(object({<br/>    rule_number     = number<br/>    protocol        = string<br/>    rule_action     = string<br/>    cidr_block      = optional(string)<br/>    ipv6_cidr_block = optional(string)<br/>    from_port       = number<br/>    to_port         = number<br/>  })))</pre> | `{}` | no |
+| <a name="input_nacls_shared"></a> [nacls\_shared](#input\_nacls\_shared) | Common stateless network ACL rules intended for reuse across multiple subnet types. | <pre>map(object({<br/>    name             = optional(string)<br/>    is_bidirectional = optional(bool, true)<br/>    common_rules     = optional(list(string), [])<br/>    inbound_rules = optional(list(object({<br/>      rule_number     = number<br/>      protocol        = string<br/>      rule_action     = string<br/>      cidr_block      = optional(string)<br/>      ipv6_cidr_block = optional(string)<br/>      from_port       = number<br/>      to_port         = number<br/>    })), [])<br/>    outbound_rules = optional(list(object({<br/>      rule_number     = number<br/>      protocol        = string<br/>      rule_action     = string<br/>      cidr_block      = optional(string)<br/>      ipv6_cidr_block = optional(string)<br/>      from_port       = number<br/>      to_port         = number<br/>    })), [])<br/>  }))</pre> | `{}` | no |
+| <a name="input_nacls_public"></a> [nacls\_public](#input\_nacls\_public) | Map of Stateless firewall rules applied specifically to public subnet boundaries. | <pre>map(object({<br/>    name             = optional(string)<br/>    is_bidirectional = optional(bool, true)<br/>    common_rules     = optional(list(string), [])<br/>    inbound_rules = optional(list(object({<br/>      rule_number     = number<br/>      protocol        = string<br/>      rule_action     = string<br/>      cidr_block      = optional(string)<br/>      ipv6_cidr_block = optional(string)<br/>      from_port       = number<br/>      to_port         = number<br/>    })), [])<br/>    outbound_rules = optional(list(object({<br/>      rule_number     = number<br/>      protocol        = string<br/>      rule_action     = string<br/>      cidr_block      = optional(string)<br/>      ipv6_cidr_block = optional(string)<br/>      from_port       = number<br/>      to_port         = number<br/>    })), [])<br/>  }))</pre> | `{}` | no |
+| <a name="input_nacls_private"></a> [nacls\_private](#input\_nacls\_private) | Map of Stateless firewall rules applied specifically to private subnet boundaries. | <pre>map(object({<br/>    name             = optional(string)<br/>    is_bidirectional = optional(bool, true)<br/>    common_rules     = optional(list(string), [])<br/>    inbound_rules = optional(list(object({<br/>      rule_number     = number<br/>      protocol        = string<br/>      rule_action     = string<br/>      cidr_block      = optional(string)<br/>      ipv6_cidr_block = optional(string)<br/>      from_port       = number<br/>      to_port         = number<br/>    })), [])<br/>    outbound_rules = optional(list(object({<br/>      rule_number     = number<br/>      protocol        = string<br/>      rule_action     = string<br/>      cidr_block      = optional(string)<br/>      ipv6_cidr_block = optional(string)<br/>      from_port       = number<br/>      to_port         = number<br/>    })), [])<br/>  }))</pre> | `{}` | no |
+| <a name="input_nacls_database"></a> [nacls\_database](#input\_nacls\_database) | Map of Stateless firewall rules applied specifically to database subnet boundaries. | <pre>map(object({<br/>    name             = optional(string)<br/>    is_bidirectional = optional(bool, true)<br/>    common_rules     = optional(list(string), [])<br/>    inbound_rules = optional(list(object({<br/>      rule_number     = number<br/>      protocol        = string<br/>      rule_action     = string<br/>      cidr_block      = optional(string)<br/>      ipv6_cidr_block = optional(string)<br/>      from_port       = number<br/>      to_port         = number<br/>    })), [])<br/>    outbound_rules = optional(list(object({<br/>      rule_number     = number<br/>      protocol        = string<br/>      rule_action     = string<br/>      cidr_block      = optional(string)<br/>      ipv6_cidr_block = optional(string)<br/>      from_port       = number<br/>      to_port         = number<br/>    })), [])<br/>  }))</pre> | `{}` | no |
+
 
 
 ## Outputs
@@ -169,11 +140,10 @@ Based on the file structure, this module manages:
 | Name | Description |
 |------|-------------|
 | <a name="output_vpc"></a> [vpc](#output\_vpc) | VPC details |
+| <a name="output_active_azs"></a> [active\_azs](#output\_active\_azs) | Map of active az location per Network Tiers: `Public`, `Private`, `Database` |
 | <a name="output_igw_id"></a> [igw\_id](#output\_igw\_id) | IGW ID |
-| <a name="output_azs"></a> [azs](#output\_azs) | List of Availability Zones |
 | <a name="output_nat_gateways"></a> [nat\_gateways](#output\_nat\_gateways) | NAT Gateways |
 | <a name="output_security_groups"></a> [security\_groups](#output\_security\_groups) | List of available Security Groups |
-| <a name="output_public_subnets"></a> [public\_subnets](#output\_public\_subnets) | List of available Public subnets|
-| <a name="output_private_subnets"></a> [private\_subnets](#output\_private\_subnets) | List of available Private subnets |
-| <a name="output_database_subnets"></a> [database\_subnets](#output\_database\_subnets) | List of available Database subnets|
+| <a name="output_subnets"></a> [subnets](#output\_subnets) | Map of available subnets per Network Tier : `Public`, `Private`, `Database` |
+| <a name="output_nacls"></a> [subnets](#output\_nacls) | Map of available nacls per Tier : `Shared`, `Public`, `Private`, `Database` |
 <!-- END_TF_DOCS -->
