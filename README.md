@@ -54,9 +54,6 @@ Based on the file structure, this module manages:
 |------|------|
 | [aws_vpc.vpc](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc) | resource |
 | [aws_internet_gateway.igw](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/internet_gateway) | resource |
-| [aws_subnet.public](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/subnet) | resource |
-| [aws_subnet.private](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/subnet) | resource |
-| [aws_subnet.database](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/subnet) | resource |
 | [aws_eip.nat](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eip) | resource |
 | [aws_nat_gateway.nat](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/nat_gateway) | resource |
 
@@ -104,7 +101,7 @@ Based on the file structure, this module manages:
 > ### NAT Gateways
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_enable_nat_gateway"></a> [enable\_nat\_gateway](#input\_enable\_nat\_gateway) | Enable NAT Gateway for private subnets | `bool` | `false` | no |
+| <a name="input_enable_nat_gateway"></a> [enable\_nat\_gateway](#input\_enable\_nat\_gateway) | Enable NAT Gateway creation | `bool` | `false` | no |
 | <a name="input_deploy_nat_in_all_public_azs"></a> [deploy\_nat\_in\_all\_public\_azs](#input\_deploy\_nat\_in\_all\_public\_azs) | Deploy NAT Gateways in all public subnet AZs if true, else use set\_nat\_deployment\_az\_location | `bool` | `true` | no |
 | <a name="input_set_nat_deployment_az_location"></a> [set\_nat\_deployment\_az\_location](#input\_set\_nat\_deployment\_az\_location) | A list of Availability Zones to deploy NAT Gateways in. Must be a subset of var.azs. | `list(string)` | `[]` | no |
 

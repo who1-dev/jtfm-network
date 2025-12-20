@@ -11,15 +11,10 @@ locals {
   IGW         = "IGW"
   NATGW       = "NATGW"
   EIP         = "EIP"
-  PRV_SUB     = "PRVSUB"
-  PUB_SUB     = "PUBSUB"
-  DB_SUB      = "DBSUB"
-  RT_ASSOC    = "RTASSOC"
   PUB_NACL    = "PUB-NACL"
   PRV_NACL    = "PRV-NACL"
   DB_NACL     = "DB-NACL"
   SHARED_NACL = "SHARED-NACL"
-
 
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   # WARNING!!! : Changing values below will force recreation of SUBNET and NACL associations
