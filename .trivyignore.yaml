@@ -1,5 +1,5 @@
 # .trivyignore.yaml
 
 misconfigurations:
-  - id: AVD-AWS-0178 #(MEDIUM): VPC does not have VPC Flow Logs enabled.
+  - id: AVD-AWS-0178 #(MEDIUM): VPC does not have VPC Flow Logs enabled. 
     statement: "Will implement once Module for IAM is created."
