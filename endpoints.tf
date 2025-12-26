@@ -8,7 +8,7 @@ locals {
         key                = format("%s-%s", key, service_name)
         service_name       = service_name
         vpc_endpoint_type  = "Interface"
-        subnet_ids         = [for key in details.subnet_keys : module.subnets[local.PRIVATE].details[key].id]
+        subnet_ids         = [for key in details.subnet_keys : module.subnets[local.PRIVATE].details[lower(key)].id]
         security_group_ids = [for key in details.security_group_keys : aws_security_group.this[key].id]
       }
     ]
@@ -20,7 +20,7 @@ resource "aws_vpc_endpoint" "interface" {
   for_each = {
     for details in local.flattened_vpc_endpoint_interface_services : details.key => details
   }
-  vpc_id              = aws_vpc.vpc.id
+  vpc_id              = aws_vpc.this.id
   service_name        = "com.amazonaws.${data.aws_region.current.region}.${each.value.service_name}"
   vpc_endpoint_type   = each.value.vpc_endpoint_type
   subnet_ids          = each.value.subnet_ids

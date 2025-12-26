@@ -19,6 +19,7 @@ variable "default_tags" {
 }
 
 # START: VPC Specific details ─────────────────────────────
+
 variable "cidr_block" {
   type        = string
   description = "CIDR block for the VPC"
@@ -39,6 +40,18 @@ variable "enable_dns_hostnames" {
   type        = bool
   description = "Enable DNS hostnames in the VPC"
   default     = true
+}
+
+variable "enable_vpc_flow_logs" {
+  type        = bool
+  description = "Enable VPC Flow Logs for the VPC"
+  default     = false
+}
+
+variable "flow_log_retention" {
+  description = "Retention in days for Flow Log CloudWatch group"
+  type        = number
+  default     = 7
 }
 
 variable "azs" {

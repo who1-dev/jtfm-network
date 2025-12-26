@@ -1,10 +1,10 @@
 output "vpc" {
   description = "VPC details"
   value = {
-    id         = aws_vpc.vpc.id
-    arn        = aws_vpc.vpc.arn
-    cidr_block = aws_vpc.vpc.cidr_block
-    region     = aws_vpc.vpc.region
+    id         = aws_vpc.this.id
+    arn        = aws_vpc.this.arn
+    cidr_block = aws_vpc.this.cidr_block
+    region     = aws_vpc.this.region
   }
 }
 
@@ -15,7 +15,7 @@ output "active_azs" {
 
 output "igw_id" {
   description = "IGW ID"
-  value       = aws_internet_gateway.igw.id
+  value       = aws_internet_gateway.this.id
 }
 
 output "nat_gateways" {

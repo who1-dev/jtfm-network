@@ -1,14 +1,14 @@
 locals {
   # Local name
-  namespace = upper(format("%s-%s", var.namespace, var.env))
+  namespace = format("%s-%s", var.namespace, var.env)
 
   # Sorted AZs
   sorted_azs = sort(var.azs)
 
   # Generic Dictionaries
   dict_azs = merge(
-    { for az in local.sorted_azs : az => upper(regex(local.REGEX_AZ_SHORT, az)[0]) },
-    { for az in local.sorted_azs : upper(regex(local.REGEX_AZ_SHORT, az)[0]) => az }
+    { for az in local.sorted_azs : az => regex(local.REGEX_AZ_SHORT, az)[0] },
+    { for az in local.sorted_azs : regex(local.REGEX_AZ_SHORT, az)[0] => az }
   )
 
 

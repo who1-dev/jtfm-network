@@ -1,6 +1,7 @@
 locals {
+  nacls = { for key, value in var.nacls : lower(key) => value }
   nacl_rules_normalized = {
-    for subnet_key, config in var.nacls : subnet_key => {
+    for subnet_key, config in local.nacls : subnet_key => {
 
       # INBOUND: Merge Common Rules (looked up) + Manual Inbound Rules
       inbound = concat(
@@ -40,7 +41,7 @@ locals {
     for subnet_key, data in local.nacl_rules_normalized : [
       for idx, rule in data.inbound : {
         # Create a unique key for for_each (e.g., "1B1-100")
-        key = "${subnet_key}-IN-${rule.rule_number}"
+        key = "${subnet_key}-in-${rule.rule_number}"
 
         nacl_key        = subnet_key
         rule_number     = rule.rule_number
@@ -59,7 +60,7 @@ locals {
   flattened_outbound_acl_rules = flatten([
     for subnet_key, data in local.nacl_rules_normalized : [
       for idx, rule in data.outbound : {
-        key = "${subnet_key}-OUT-${rule.rule_number}"
+        key = "${subnet_key}-out-${rule.rule_number}"
 
         nacl_key        = subnet_key
         rule_number     = rule.rule_number
@@ -76,32 +77,32 @@ locals {
 }
 
 resource "aws_network_acl" "this" {
-  for_each = toset(keys(var.nacls))
+  for_each = toset(keys(local.nacls))
   vpc_id   = var.vpc_id
 
   tags = merge(var.default_tags, {
-    Name = format("%s-%s", var.namespace, var.nacls[each.key].name == null ? format("%s-%s", var.nacl_type, each.key) : upper(var.nacls[each.key].name))
+    Name = format("%s-%s", var.namespace, local.nacls[each.key].name == null ? format("%s-%s", var.nacl_type, each.key) : local.nacls[each.key].name)
   })
 }
 
-resource "aws_network_acl_rule" "rules" {
-  for_each = { 
-    for r in concat(local.flattened_inbound_acl_rules, local.flattened_outbound_acl_rules) : r.key => r 
-  }
+# resource "aws_network_acl_rule" "rules" {
+#   for_each = { 
+#     for r in concat(local.flattened_inbound_acl_rules, local.flattened_outbound_acl_rules) : r.key => r 
+#   }
 
-  network_acl_id = aws_network_acl.this[each.value.nacl_key].id
+#   network_acl_id = aws_network_acl.this[each.value.nacl_key].id
   
-  rule_number    = each.value.rule_number
-  egress         = each.value.egress      
-  protocol       = each.value.protocol
-  rule_action    = each.value.rule_action
-  cidr_block     = each.value.cidr_block
-  from_port      = each.value.from_port
-  to_port        = each.value.to_port
+#   rule_number    = each.value.rule_number
+#   egress         = each.value.egress      
+#   protocol       = each.value.protocol
+#   rule_action    = each.value.rule_action
+#   cidr_block     = each.value.cidr_block
+#   from_port      = each.value.from_port
+#   to_port        = each.value.to_port
 
-  lifecycle {
-    create_before_destroy = false
-  }
+#   lifecycle {
+#     create_before_destroy = false
+#   }
 
-  depends_on = [ aws_network_acl.this ]
-}
+#   depends_on = [ aws_network_acl.this ]
+# }

@@ -1,8 +1,5 @@
 locals {
 
-  # Should be Identical to the parent module. Else `map_public_ip_on_launch` will always be false
-  PUBLIC = "PUBLIC"
-
   # Generate subnet keys: e.g., 1A1, 1A2, 1B1, 1B2 for 2 AZs and 4 subnets | 3 AZs and 5 subnets : 1A1, 1B1, 1C1, 2A1, 2B1
   map_subnets = merge([
     for az, cidrs in var.subnets : {
@@ -22,6 +19,6 @@ resource "aws_subnet" "this" {
   availability_zone = each.value.az
 
   tags = merge(var.default_tags, {
-    Name = format("%s-%s-%s", var.namespace, upper(var.subnet_type), each.key)
+    Name = lower(format("%s-%s-%s", var.namespace, var.subnet_type, each.key))
   })
 }

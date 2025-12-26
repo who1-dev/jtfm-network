@@ -5,8 +5,8 @@ locals {
 
   // Quarantine NACL should always be created.
   nacls_shared = merge(var.nacls_shared, {
-    "QUARANTINE" = {
-      name             = "QUARANTINE-NACL"
+    "quarantine" = {
+      name             = "quarantine-nacl"
       is_bidirectional = false
     }
   })
@@ -39,7 +39,7 @@ module "nacls" {
   # Common Variables
   namespace    = local.namespace
   default_tags = local.default_tags
-  vpc_id       = aws_vpc.vpc.id
+  vpc_id       = aws_vpc.this.id
 
 
   # Submodule-specific Variables

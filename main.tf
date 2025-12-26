@@ -1,5 +1,5 @@
 # Create a VPC
-resource "aws_vpc" "vpc" {
+resource "aws_vpc" "this" {
   region               = var.region
   cidr_block           = var.cidr_block
   instance_tenancy     = var.instance_tenancy
@@ -7,19 +7,19 @@ resource "aws_vpc" "vpc" {
   enable_dns_hostnames = var.enable_dns_hostnames
 
   tags = merge(local.default_tags, {
-    Name = local.namespace
+    Name = format("%s-%s", local.namespace, local.VPC)
   })
 }
 
 # Create an Internet Gateway
-resource "aws_internet_gateway" "igw" {
+resource "aws_internet_gateway" "this" {
 
-  vpc_id = aws_vpc.vpc.id
+  vpc_id = aws_vpc.this.id
   tags = merge(local.default_tags, {
     Name = format("%s-%s", local.namespace, local.IGW)
   })
 
-  depends_on = [aws_vpc.vpc]
+  depends_on = [aws_vpc.this]
 }
 
 # Create Elastic IPs for NAT Gateways (if enabled)
@@ -29,7 +29,7 @@ resource "aws_eip" "nat" {
     Name = format("%s-%s-%s", local.namespace, local.EIP, each.key)
   })
 
-  depends_on = [aws_internet_gateway.igw]
+  depends_on = [aws_internet_gateway.this]
 }
 
 # Create NAT Gateway (if enabled)
@@ -42,7 +42,7 @@ resource "aws_nat_gateway" "nat" {
     Name = format("%s-%s-%s", local.namespace, local.NATGW, each.key)
   })
 
-  depends_on = [aws_internet_gateway.igw, module.subnets]
+  depends_on = [aws_internet_gateway.this, module.subnets]
 }
 
 # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -54,12 +54,12 @@ module "subnets" {
   # Common Variables
   namespace    = local.namespace
   default_tags = local.default_tags
-  vpc_id       = aws_vpc.vpc.id
+  vpc_id       = aws_vpc.this.id
   dict_azs     = local.dict_azs
 
   # Submodule-specific Variables
   for_each    = local.map_subnets
-  subnet_type = upper(each.value.type)
+  subnet_type = each.value.type
   subnets     = each.value.subnets
 }
 # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

@@ -9,7 +9,7 @@ output "details" {
       id         = details.id
       arn        = details.arn
       az         = details.availability_zone
-      short_az   = upper(var.dict_azs[details.availability_zone])
+      short_az   = var.dict_azs[details.availability_zone]
       cidr_block = details.cidr_block
     }
   }

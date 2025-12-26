@@ -22,7 +22,7 @@ resource "aws_security_group" "this" {
   for_each    = var.security_groups
   name        = each.value.name
   description = each.value.description
-  vpc_id      = aws_vpc.vpc.id
+  vpc_id      = aws_vpc.this.id
 
   egress {
     from_port   = 0
