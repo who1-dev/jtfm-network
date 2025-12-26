@@ -21,9 +21,6 @@ resource "aws_subnet" "this" {
   cidr_block        = each.value.cidr
   availability_zone = each.value.az
 
-  # Enable only if Subnet is type of Public
-  map_public_ip_on_launch = (var.subnet_type == local.PUBLIC)
-
   tags = merge(var.default_tags, {
     Name = format("%s-%s-%s", var.namespace, upper(var.subnet_type), each.key)
   })
