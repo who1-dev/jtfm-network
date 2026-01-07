@@ -151,18 +151,28 @@ variable "database_subnets" {
 # START: Security Group related Variables ──────────────────────────────────────────────────────────────────────────────────────────────────────────────-
 variable "security_groups" {
   type = map(object({
-    name        = string
-    description = string
-    rules = list(object({
+    name                  = string
+    description           = string
+    enable_default_egress = optional(bool, true)
+    ingress = list(object({
       port                          = number
       cidr_block                    = optional(string)
       referenced_security_group_key = optional(string, null)
       ip_protocol                   = optional(string, "tcp")
+      description                   = optional(string)
     }))
+    egress = optional(list(object({
+      port                          = number
+      cidr_block                    = optional(string)
+      referenced_security_group_key = optional(string, null)
+      ip_protocol                   = optional(string, "tcp")
+      description                   = optional(string)
+    })), [])
   }))
   description = "Definitions for stateful firewalls, including ingress/egress rules and source-group referencing."
   default     = {}
 }
+
 # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 # START: NACL Variables ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -284,6 +294,10 @@ variable "nacls_database" {
 
 # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-
-
+# START: Data Source variables ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+variable "ds_vpc_flow_log_role_name" {
+  type        = string
+  description = "Retrieve available assumable role for VPC Flow Logs"
+  default     = "VPC-Flow-Logs-Assumable-Role"
+}
 

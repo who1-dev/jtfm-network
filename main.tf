@@ -11,6 +11,33 @@ resource "aws_vpc" "this" {
   })
 }
 
+# Create VPC Flow Logs (if enabled)
+resource "aws_flow_log" "this" {
+  count = var.enable_vpc_flow_logs ? 1 : 0
+
+  iam_role_arn    = data.aws_iam_role.vpc_flow_log[0].arn
+  log_destination = aws_cloudwatch_log_group.flow_log[0].arn
+  traffic_type    = "ALL"
+  vpc_id          = aws_vpc.this.id
+
+  tags = merge(
+    var.default_tags,
+    {
+      Name = lower("${var.namespace}-${var.env}-${local.flow_log}")
+    }
+  )
+}
+
+# Create CloudWatch Log Group for VPC Flow Logs (if enabled)
+resource "aws_cloudwatch_log_group" "flow_log" {
+  count = var.enable_vpc_flow_logs ? 1 : 0
+
+  name              = lower("/aws/${local.flow_log}/${var.namespace}-${var.env}")
+  retention_in_days = var.flow_log_retention
+}
+
+
+
 # Create an Internet Gateway
 resource "aws_internet_gateway" "this" {
 

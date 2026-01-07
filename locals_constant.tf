@@ -15,6 +15,7 @@ locals {
   PRV_NACL    = "prv-nacl"
   DB_NACL     = "db-nacl"
   SHARED_NACL = "shared-nacl"
+  flow_log    = "vpc-flow-log"
 
   # ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   # WARNING!!! : Changing values below will force recreation of SUBNET and NACL associations

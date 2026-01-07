@@ -85,24 +85,24 @@ resource "aws_network_acl" "this" {
   })
 }
 
-# resource "aws_network_acl_rule" "rules" {
-#   for_each = { 
-#     for r in concat(local.flattened_inbound_acl_rules, local.flattened_outbound_acl_rules) : r.key => r 
-#   }
+resource "aws_network_acl_rule" "rules" {
+  for_each = { 
+    for r in concat(local.flattened_inbound_acl_rules, local.flattened_outbound_acl_rules) : r.key => r 
+  }
 
-#   network_acl_id = aws_network_acl.this[each.value.nacl_key].id
+  network_acl_id = aws_network_acl.this[each.value.nacl_key].id
   
-#   rule_number    = each.value.rule_number
-#   egress         = each.value.egress      
-#   protocol       = each.value.protocol
-#   rule_action    = each.value.rule_action
-#   cidr_block     = each.value.cidr_block
-#   from_port      = each.value.from_port
-#   to_port        = each.value.to_port
+  rule_number    = each.value.rule_number
+  egress         = each.value.egress      
+  protocol       = each.value.protocol
+  rule_action    = each.value.rule_action
+  cidr_block     = each.value.cidr_block
+  from_port      = each.value.from_port
+  to_port        = each.value.to_port
 
-#   lifecycle {
-#     create_before_destroy = false
-#   }
+  lifecycle {
+    create_before_destroy = false
+  }
 
-#   depends_on = [ aws_network_acl.this ]
-# }
+  depends_on = [ aws_network_acl.this ]
+}

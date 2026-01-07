@@ -1,6 +1,6 @@
 locals {
   # Local name
-  namespace = format("%s-%s", var.namespace, var.env)
+  namespace = lower(format("%s-%s", var.namespace, var.env))
 
   # Sorted AZs
   sorted_azs = sort(var.azs)
